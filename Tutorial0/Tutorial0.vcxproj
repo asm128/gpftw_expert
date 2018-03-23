@@ -103,7 +103,7 @@
       <PreprocessorDefinitions>_WINDOWS;NDEBUG;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>..\..\candy\caramel; ..\..\candy\candy; </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\lilia\lemon; ..\..\lilia\lilia; </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -111,7 +111,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
-      <AdditionalDependencies>caramel.lib; candy.lib; user32.lib; gdi32.lib; </AdditionalDependencies>
+      <AdditionalDependencies>lemon.lib; lilia.lib; user32.lib; gdi32.lib; </AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
@@ -123,13 +123,13 @@
       <PreprocessorDefinitions>_WINDOWS;WIN32;_DEBUG;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>..\..\candy\caramel; ..\..\candy\candy; </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\lilia\lemon; ..\..\lilia\lilia; </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
-      <AdditionalDependencies>caramel.lib; candy.lib; user32.lib; gdi32.lib; </AdditionalDependencies>
+      <AdditionalDependencies>lemon.lib; lilia.lib; user32.lib; gdi32.lib; </AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
@@ -141,13 +141,13 @@
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>..\..\candy\caramel; ..\..\candy\candy; </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\lilia\lemon; ..\..\lilia\lilia; </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
-      <AdditionalDependencies>caramel.lib; candy.lib; user32.lib; gdi32.lib; </AdditionalDependencies>
+      <AdditionalDependencies>lemon.lib; lilia.lib; user32.lib; gdi32.lib; </AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
@@ -161,7 +161,7 @@
       <PreprocessorDefinitions>_WINDOWS;WIN32;NDEBUG;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>..\..\candy\caramel; ..\..\candy\candy; </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\lilia\lemon; ..\..\lilia\lilia; </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -169,7 +169,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(OutDir); </AdditionalLibraryDirectories>
-      <AdditionalDependencies>caramel.lib; candy.lib; user32.lib; gdi32.lib; </AdditionalDependencies>
+      <AdditionalDependencies>lemon.lib; lilia.lib; user32.lib; gdi32.lib; </AdditionalDependencies>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
