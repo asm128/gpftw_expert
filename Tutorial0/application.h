@@ -19,6 +19,8 @@ struct SApplication {
 						::llc::SModelGeometry							Box											= {};
 						::llc::SModelPivot								BoxTransform								= {};
 
+						double											CameraAngle									= .75;//.25;
+
 																		SApplication								(::llc::SRuntimeValues& runtimeValues)			noexcept	: Framework(runtimeValues) {}
 };
 
