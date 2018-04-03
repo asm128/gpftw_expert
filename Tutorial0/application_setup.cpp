@@ -14,17 +14,23 @@ extern				::SApplication														* g_ApplicationInstance						;
 	::llc::SDisplay																				& mainDisplay								= applicationInstance.Framework.MainDisplay;
 	::llc::SInput																				& input										= applicationInstance.Framework.Input;
 	::llc::SDisplayPlatformDetail																& displayDetail								= mainDisplay.PlatformDetail;
+	int32_t																						zDelta										= {};
 	switch(uMsg) {
 	default: break;		
 	case WM_CLOSE			: ::DestroyWindow(hWnd); return 0;
 	case WM_KEYDOWN			: if(wParam > ::llc::size(input.KeyboardPrevious.KeyState)) break; input.KeyboardPrevious.KeyState[wParam] = input.KeyboardCurrent.KeyState[wParam]; input.KeyboardCurrent.KeyState[wParam]  =  1; return 0;
 	case WM_KEYUP			: if(wParam > ::llc::size(input.KeyboardPrevious.KeyState)) break; input.KeyboardPrevious.KeyState[wParam] = input.KeyboardCurrent.KeyState[wParam]; input.KeyboardCurrent.KeyState[wParam] &= ~1; return 0;
+	case WM_MOUSEWHEEL		:
+		zDelta																					= GET_WHEEL_DELTA_WPARAM(wParam);
+		input.MouseCurrent.Deltas.z																= zDelta;
+		return 0;
 	case WM_MOUSEMOVE		: {
 		int32_t																						xPos										= GET_X_LPARAM(lParam); 
 		int32_t																						yPos										= GET_Y_LPARAM(lParam); 
 		input.MouseCurrent.Position.x															= ::llc::clamp(xPos, 0, (int32_t)mainDisplay.Size.x);
 		input.MouseCurrent.Position.y															= ::llc::clamp(yPos, 0, (int32_t)mainDisplay.Size.y);
-		input.MouseCurrent.Deltas																= input.MouseCurrent.Position - input.MousePrevious.Position;
+		input.MouseCurrent.Deltas.x																= input.MouseCurrent.Position.x - input.MousePrevious.Position.x;
+		input.MouseCurrent.Deltas.y																= input.MouseCurrent.Position.y - input.MousePrevious.Position.y;
 		return 0;
 	}
 	case WM_GETMINMAXINFO	:	// Catch this message so to prevent the window from becoming too small.
@@ -86,7 +92,7 @@ extern				::SApplication														* g_ApplicationInstance						;
 	mainWindow.Size																			= {::BMP_SCREEN_WIDTH, ::BMP_SCREEN_HEIGHT};
 	::RECT																						finalClientRect								= {100, 100, 100 + (LONG)mainWindow.Size.x, 100 + (LONG)mainWindow.Size.y};
 	::AdjustWindowRectEx(&finalClientRect, WS_OVERLAPPEDWINDOW, FALSE, 0);
-	mainWindow.PlatformDetail.WindowHandle													= ::CreateWindowEx(0, displayDetail.WindowClassName, TEXT("Window Sugar"), WS_OVERLAPPEDWINDOW
+	mainWindow.PlatformDetail.WindowHandle													= ::CreateWindowEx(0, displayDetail.WindowClassName, TEXT("Window"), WS_OVERLAPPEDWINDOW
 		, finalClientRect.left
 		, finalClientRect.top
 		, finalClientRect.right		- finalClientRect.left
