@@ -10,14 +10,25 @@
 //};
 
 struct SRenderCache {
-	::llc::array_pod<::llc::SColorBGRA>											Triangle3dColorList							= {};
-	::llc::array_pod<::llc::SCoord3<float>>										TransformedNormals							= {};
+						::llc::array_pod<::llc::SColorBGRA>				Triangle3dColorList							= {};
+						::llc::array_pod<::llc::SCoord3<float>>			TransformedNormals							= {};
 
-	::llc::array_pod<::llc::STriangle3D<float>>									Triangle3dToDraw							= {};
-	::llc::array_pod<::llc::STriangle2D<int32_t>>								Triangle2dToDraw							= {};
-	::llc::array_pod<int16_t>													Triangle3dIndices							= {};
-	::llc::array_pod<int16_t>													Triangle2dIndices							= {};
-	::llc::array_pod<int16_t>													Triangle2d23dIndices						= {};
+						::llc::array_pod<::llc::STriangle3D<float>>		Triangle3dToDraw							= {};
+						::llc::array_pod<::llc::STriangle2D<int32_t>>	Triangle2dToDraw							= {};
+						::llc::array_pod<int16_t>						Triangle3dIndices							= {};
+						::llc::array_pod<int16_t>						Triangle2dIndices							= {};
+						::llc::array_pod<int16_t>						Triangle2d23dIndices						= {};
+};
+
+struct SCamera {
+						::llc::SCoord3<float>							Position	;
+						::llc::SCoord3<float>							Target		;
+};
+
+struct SCameraVectors {
+						::llc::SCoord3<float>							CameraFront									;
+						::llc::SCoord3<float>							CameraUp									;
+						::llc::SCoord3<float>							CameraRight									;
 };
 
 struct SApplication {
@@ -38,9 +49,12 @@ struct SApplication {
 						double											CameraFar									= 30.0;
 						double											CameraNear									= 0.001;
 						double											CameraAngle									= .25;
-						::llc::SCoord3<float>							CameraUp									= {};
-						::llc::SCoord3<float>							CameraFront									= {};
-						::llc::SCoord3<float>							CameraRight									= {};
+						::SCamera										Camera										= {{20, 5, 0}, {}};
+						::SCameraVectors								CameraVectors								= 
+							{ {1, 0, 0}
+							, {0, 1, 0}
+							, {0, 0, 1}
+							};
 
 						::SRenderCache									RenderCache									= {};
 
