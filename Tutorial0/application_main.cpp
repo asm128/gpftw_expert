@@ -23,12 +23,12 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		::llc::SMatrix4<float>														& projection								= applicationInstance.XProjection		;
 		::llc::SMatrix4<float>														& viewport									= applicationInstance.XViewport			;
 		::llc::SMatrix4<float>														& viewportInverse							= applicationInstance.XViewportInverse	;
-		viewport.Viewport(newSize, applicationInstance.CameraFar, applicationInstance.CameraNear);
+		viewport.Viewport(newSize, applicationInstance.Camera.Range.Far, applicationInstance.Camera.Range.Near);
 		viewportInverse															= viewport.GetInverse();
 		const ::llc::SCoord2<int32_t>												screenCenter								= {(int32_t)newSize.x / 2, (int32_t)newSize.y / 2};
 		viewportInverse._41														+= screenCenter.x;
 		viewportInverse._42														+= screenCenter.y;
-		projection.FieldOfView(applicationInstance.CameraAngle * ::llc::math_pi, newSize.x / (double)newSize.y, applicationInstance.CameraNear, applicationInstance.CameraFar);
+		projection.FieldOfView(applicationInstance.Camera.Range.Angle * ::llc::math_pi, newSize.x / (double)newSize.y, applicationInstance.Camera.Range.Near, applicationInstance.Camera.Range.Far);
 		projection																*= viewportInverse;
 	}
 	llc_necall(::llc::updateSizeDependentTarget(applicationInstance.Framework.Offscreen, newSize), "??");
@@ -86,14 +86,19 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	ree_if(errored(frameworkResult), "Unknown error.");
 	rvi_if(1, frameworkResult == 1, "Framework requested close. Terminating execution.");
 	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and this could cause an invalid memory access later on.");
-	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_ADD		])	applicationInstance.CameraAngle += frameInfo.Seconds.LastFrame * .05f;
-	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_SUBTRACT	])	applicationInstance.CameraAngle -= frameInfo.Seconds.LastFrame * .05f;
+	bool																		updateProjection							= false;
+	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_ADD		])	{ updateProjection = true; applicationInstance.Camera.Range.Angle += frameInfo.Seconds.LastFrame * .05f; }
+	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_SUBTRACT	])	{ updateProjection = true; applicationInstance.Camera.Range.Angle -= frameInfo.Seconds.LastFrame * .05f; }
+	if(updateProjection) {
+		::llc::SMatrix4<float>														& projection								= applicationInstance.XProjection		;
+		const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= framework.Offscreen.View.metrics();
+		projection.FieldOfView(applicationInstance.Camera.Range.Angle * ::llc::math_pi, offscreenMetrics.x / (double)offscreenMetrics.y, applicationInstance.Camera.Range.Near, applicationInstance.Camera.Range.Far);
+		::llc::SMatrix4<float>														& viewportInverse							= applicationInstance.XViewportInverse	;
+		projection																*= viewportInverse;
+	}
 
-	applicationInstance.BoxPivot.Orientation.y								+= (float)(sinf((float)frameInfo.Seconds.Total / 2) * ::llc::math_pi);
-	applicationInstance.BoxPivot.Orientation.w								= 1;
-	applicationInstance.BoxPivot.Orientation.Normalize();
-
-	::SCamera																	& camera									= applicationInstance.Camera;
+	//------------------------------------------------ Camera
+	::llc::SCameraPoints														& camera									= applicationInstance.Camera.Points;
 	camera.Position.RotateY(framework.Input.MouseCurrent.Deltas.x / 20.0f);
 	if(framework.Input.MouseCurrent.Deltas.z) {
 		::llc::SCoord3<float>														zoomVector									= camera.Position;
@@ -101,18 +106,25 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		const double																zoomWeight									= framework.Input.MouseCurrent.Deltas.z / 240.;
 		camera.Position															+= zoomVector * zoomWeight;
 	}
-	//------------------------------------------------
 	::llc::SMatrix4<float>														& viewMatrix								= applicationInstance.XView			;
-	::llc::SCoord3<float>														& cameraUp									= applicationInstance.CameraVectors.CameraUp;
-	::llc::SCoord3<float>														& cameraFront								= applicationInstance.CameraVectors.CameraFront;
-	::llc::SCoord3<float>														& cameraRight								= applicationInstance.CameraVectors.CameraRight;
-	cameraUp																= {0, 1, 0};
-	cameraFront																= (camera.Target - camera.Position).Normalize();
-	cameraRight																= cameraUp.Cross(cameraFront).Normalize();
-	cameraUp																= cameraFront.Cross(cameraRight).Normalize();
-	viewMatrix.View3D(camera.Position, cameraRight, cameraUp, cameraFront);
+	::llc::SCameraVectors														& cameraVectors								= applicationInstance.Camera.Vectors;
+	cameraVectors.Up														= {0, 1, 0};
+	cameraVectors.Front														= (camera.Target - camera.Position).Normalize();
+	cameraVectors.Right														= cameraVectors.Up		.Cross(cameraVectors.Front).Normalize();
+	cameraVectors.Up														= cameraVectors.Front	.Cross(cameraVectors.Right).Normalize();
+	viewMatrix.View3D(camera.Position, cameraVectors.Right, cameraVectors.Up, cameraVectors.Front);
 	//viewMatrix.LookAt(camera.Position, camera.Target, cameraUp);
+
+	//------------------------------------------------ Lights
+	::llc::SCoord3<float>														& lightPos									= applicationInstance.LightPosition;
+	lightPos.RotateY(frameInfo.Microseconds.LastFrame / 250000.0f);
+	lightPos.Normalize();
+
+	//------------------------------------------------ 
 	applicationInstance.BoxPivot.Scale										= {.5f, 1.0f, 2.5f};
+	applicationInstance.BoxPivot.Orientation.y								+= (float)(sinf((float)frameInfo.Seconds.Total / 2) * ::llc::math_pi);
+	applicationInstance.BoxPivot.Orientation.w								= 1;
+	applicationInstance.BoxPivot.Orientation.Normalize();
 	applicationInstance.BoxPivot.Position									= {0, 0, 0};
 	return 0;
 }
@@ -137,7 +149,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	char																		buffer		[256]							= {};
 	uint32_t																	
 	textLen																	= (uint32_t)sprintf_s(buffer, "[%u x %u]. FPS: %g. Last frame seconds: %g.", mainWindow.Size.x, mainWindow.Size.y, 1 / timer.LastTimeSeconds, timer.LastTimeSeconds);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Pixels drawn: %u.", (uint32_t)pixelsDrawn);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	textLen																	= (uint32_t)sprintf_s(buffer, "Pixels drawn: %u. Pixels skipped: %u.", (uint32_t)applicationInstance.RenderCache.PixelsDrawn, (uint32_t)applicationInstance.RenderCache.PixelsSkipped);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dColorList  cache size: %u.", applicationInstance.RenderCache.Triangle3dColorList	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	textLen																	= (uint32_t)sprintf_s(buffer, "TransformedNormals   cache size: %u.", applicationInstance.RenderCache.TransformedNormals	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dToDraw     cache size: %u.", applicationInstance.RenderCache.Triangle3dToDraw		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});

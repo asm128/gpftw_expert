@@ -7,44 +7,36 @@
 	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
 	::memset(offscreen.Texels.begin(), 0, sizeof(::llc::SFramework::TOffscreen::TTexel) * offscreen.Texels.size());	// Clear target.
 
-	::llc::array_pod<::llc::SColorBGRA>											& triangle3dColorList						= applicationInstance.RenderCache.Triangle3dColorList	;
-	::llc::array_pod<::llc::SCoord3<float>>										& transformedNormals						= applicationInstance.RenderCache.TransformedNormals	;
-	::llc::array_pod<::llc::STriangle3D<float>>									& triangle3dToDraw							= applicationInstance.RenderCache.Triangle3dToDraw		;
-	::llc::array_pod<::llc::STriangle2D<int32_t>>								& triangle2dToDraw							= applicationInstance.RenderCache.Triangle2dToDraw		;
-	::llc::array_pod<int16_t>													& triangle3dIndices							= applicationInstance.RenderCache.Triangle3dIndices		;
-	::llc::array_pod<int16_t>													& triangle2dIndices							= applicationInstance.RenderCache.Triangle2dIndices		;
-	::llc::array_pod<int16_t>													& triangle2d23dIndices						= applicationInstance.RenderCache.Triangle2d23dIndices	;
+	::SRenderCache																& renderCache								= applicationInstance.RenderCache;
 
-	::llc::SMatrix4<float>														& projection								= applicationInstance.XProjection	;
-	::llc::SMatrix4<float>														& viewMatrix								= applicationInstance.XView			;
+	const ::llc::SMatrix4<float>												& projection								= applicationInstance.XProjection	;
+	const ::llc::SMatrix4<float>												& viewMatrix								= applicationInstance.XView			;
+
 	::llc::SMatrix4<float>														xViewProjection								= viewMatrix * projection;
-	::llc::SCoord3<float>														lightPos									= {10, 5, 0};
-	::llc::SFrameInfo															& frameInfo									= framework.FrameInfo;
-	lightPos.RotateY(frameInfo.Microseconds.Total / 250000.0f);
 	::llc::SMatrix4<float>														xWorld										= {};
 	::llc::SMatrix4<float>														xRotation									= {};
-	xRotation.Identity();
-	lightPos.Normalize();
-
-	const double																& fFar										= applicationInstance.CameraFar		;
-	const double																& fNear										= applicationInstance.CameraNear	;
-	int32_t																		pixelsDrawn									= 0;
+	const double																& fFar										= applicationInstance.Camera.Range.Far	;
+	const double																& fNear										= applicationInstance.Camera.Range.Near	;
+	int32_t																		& pixelsDrawn								= applicationInstance.RenderCache.PixelsDrawn	= 0;
+	int32_t																		& pixelsSkipped								= applicationInstance.RenderCache.PixelsSkipped	= 0;
+	renderCache.WireframePixelCoords.clear();
 	for(uint32_t iBox = 0; iBox < 20; ++iBox) {
 		applicationInstance.BoxPivot.Position.x									= (float)iBox;
-		applicationInstance.BoxPivot.Scale.z									= iBox / 10.0f;
+		applicationInstance.BoxPivot.Scale.z									= iBox / 10.0f + .1f;
+		applicationInstance.BoxPivot.Scale.y									= iBox / 20.0f + .1f;
 		xWorld		.Scale			(applicationInstance.BoxPivot.Scale, true);
 		xRotation	.SetOrientation	((applicationInstance.BoxPivot.Orientation + ::llc::SQuaternion<float>{0, (float)(iBox / ::llc::math_2pi), 0, 0}).Normalize());
 		xWorld																	= xWorld * xRotation;
 		xWorld		.SetTranslation(applicationInstance.BoxPivot.Position, false);
-		//triangle3dColorList		.clear();
-		//transformedNormals		.clear();
-		triangle3dToDraw		.clear();
-		triangle2dToDraw		.clear();
-		triangle3dIndices		.clear();
-		triangle2dIndices		.clear();
-		triangle2d23dIndices	.clear();
-		::llc::SCoord2<int32_t>														offscreenMetricsI							= offscreenMetrics.Cast<int32_t>();
-		const ::llc::SCoord3<float>													& cameraFront								= applicationInstance.CameraVectors.CameraFront;
+		::llc::clear
+			( renderCache.Triangle3dToDraw		
+			, renderCache.Triangle2dToDraw		
+			, renderCache.Triangle3dIndices		
+			, renderCache.Triangle2dIndices		
+			, renderCache.Triangle2d23dIndices	
+			);
+		const ::llc::SCoord2<int32_t>												offscreenMetricsI							= offscreenMetrics.Cast<int32_t>();
+		const ::llc::SCoord3<float>													& cameraFront								= applicationInstance.Camera.Vectors.Front;
 		for(uint32_t iTriangle = 0; iTriangle < 12; ++iTriangle) {
 			::llc::STriangle3D<float>													transformedTriangle3D						= applicationInstance.Box.Positions[iTriangle];
 			::llc::transform(transformedTriangle3D, xWorld * xViewProjection);
@@ -52,11 +44,11 @@
 				continue;
 			if(transformedTriangle3D.A.z <= fNear	|| transformedTriangle3D.B.z <= fNear	|| transformedTriangle3D.C.z <= fNear) 
 				continue;
-			triangle3dToDraw	.push_back(transformedTriangle3D);
-			triangle3dIndices	.push_back((int16_t)iTriangle);
+			llc_necall(renderCache.Triangle3dToDraw		.push_back(transformedTriangle3D)	, "Out of memory?");
+			llc_necall(renderCache.Triangle3dIndices	.push_back((int16_t)iTriangle)		, "Out of memory?");
 		}
-		for(uint32_t iTriangle = 0, triCount = triangle3dIndices.size(); iTriangle < triCount; ++iTriangle) {
-			const ::llc::STriangle3D<float>												& transformedTriangle3D						= triangle3dToDraw[iTriangle];
+		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle3dIndices.size(); iTriangle < triCount; ++iTriangle) {
+			const ::llc::STriangle3D<float>												& transformedTriangle3D						= renderCache.Triangle3dToDraw[iTriangle];
 			if(transformedTriangle3D.A.x < 0 && transformedTriangle3D.B.x < 0 && transformedTriangle3D.C.x < 0) 
 				continue;
 			if(transformedTriangle3D.A.y < 0 && transformedTriangle3D.B.y < 0 && transformedTriangle3D.C.y < 0) 
@@ -76,37 +68,52 @@
 				, {(int32_t)transformedTriangle3D.B.x, (int32_t)transformedTriangle3D.B.y}
 				, {(int32_t)transformedTriangle3D.C.x, (int32_t)transformedTriangle3D.C.y}
 				};
-			llc_necall(triangle2dToDraw		.push_back(transformedTriangle2D)		, "?");
-			llc_necall(triangle2dIndices	.push_back(triangle3dIndices[iTriangle]), "?");
-			llc_necall(triangle2d23dIndices	.push_back((int16_t)iTriangle)			, "?");
+			llc_necall(renderCache.Triangle2dToDraw		.push_back(transformedTriangle2D)		, "Out of memory?");
+			llc_necall(renderCache.Triangle2dIndices	.push_back(renderCache.Triangle3dIndices[iTriangle]), "Out of memory?");
+			llc_necall(renderCache.Triangle2d23dIndices	.push_back((int16_t)iTriangle)			, "Out of memory?");
 		}
-		transformedNormals	.resize(triangle2dToDraw.size());
-		triangle3dColorList	.resize(triangle2dToDraw.size());
-		for(uint32_t iTriangle = 0, triCount = triangle2dToDraw.size(); iTriangle < triCount; ++iTriangle) // transform normals
-			transformedNormals[iTriangle]											= xWorld.TransformDirection(applicationInstance.Box.Normals[triangle3dIndices[triangle2d23dIndices[iTriangle]]]).Normalize();
+		llc_necall(renderCache.TransformedNormals	.resize(renderCache.Triangle2dToDraw.size()), "Out of memory?");
+		llc_necall(renderCache.Triangle3dColorList	.resize(renderCache.Triangle2dToDraw.size()), "Out of memory?");
+		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle2dToDraw.size(); iTriangle < triCount; ++iTriangle) // transform normals
+			renderCache.TransformedNormals[iTriangle]											= xWorld.TransformDirection(applicationInstance.Box.Normals[renderCache.Triangle3dIndices[renderCache.Triangle2d23dIndices[iTriangle]]]).Normalize();
 
-		for(uint32_t iTriangle = 0, triCount = triangle2dToDraw.size(); iTriangle < triCount; ++iTriangle) { // calculate lighting 
-			const double																lightFactor									= transformedNormals[iTriangle].Dot(lightPos);
-			triangle3dColorList[iTriangle]											= ((0 == (iBox % 2)) ? ::llc::GREEN : ::llc::MAGENTA) * lightFactor;
+		const ::llc::SCoord3<float>													& lightPos									= applicationInstance.LightPosition;
+		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle2dToDraw.size(); iTriangle < triCount; ++iTriangle) { // calculate lighting 
+			const double																lightFactor									= renderCache.TransformedNormals[iTriangle].Dot(lightPos);
+			renderCache.Triangle3dColorList[iTriangle]											= ((0 == (iBox % 2)) ? ::llc::GREEN : ::llc::MAGENTA) * lightFactor;
 		}
 
-		::llc::array_pod<::llc::SCoord2<int32_t>>									trianglePixelCoords;
-		::llc::array_pod<::llc::SCoord2<int16_t>>									wireframePixelCoords;
-		for(uint32_t iTriangle = 0, triCount = triangle2dIndices.size(); iTriangle < triCount; ++iTriangle) { // 
-			const double																cameraFactor								= transformedNormals[iTriangle].Dot(cameraFront);
+		renderCache.TrianglePixelCoords.clear();
+		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle2dIndices.size(); iTriangle < triCount; ++iTriangle) { // 
+			const double																cameraFactor								= renderCache.TransformedNormals[iTriangle].Dot(cameraFront);
 			if(cameraFactor > .35)
 				continue;
 			//error_if(errored(::llc::drawTriangle(offscreen.View, triangle3dColorList[iTriangle], triangle2dToDraw[iTriangle])), "Not sure if these functions could ever fail");
-			trianglePixelCoords.clear();
-			error_if(errored(::llc::drawTriangle(offscreenMetrics, triangle2dToDraw[iTriangle], trianglePixelCoords)), "Not sure if these functions could ever fail");
-			for(uint32_t iPixel = 0, pixCount = trianglePixelCoords.size(); iPixel < pixCount; ++iPixel) {
-				const ::llc::SCoord2<int32_t>												& pixelCoord								= trianglePixelCoords[iPixel];
-				if( offscreen.View[pixelCoord.y][pixelCoord.x] != triangle3dColorList[iTriangle] ) {
-					offscreen.View[pixelCoord.y][pixelCoord.x]								= triangle3dColorList[iTriangle];
+			renderCache.TrianglePixelCoords.clear();
+			error_if(errored(::llc::drawTriangle(offscreenMetrics, renderCache.Triangle2dToDraw[iTriangle], renderCache.TrianglePixelCoords)), "Not sure if these functions could ever fail");
+			for(uint32_t iPixel = 0, pixCount = renderCache.TrianglePixelCoords.size(); iPixel < pixCount; ++iPixel) {
+				const ::llc::SCoord2<int32_t>												& pixelCoord								= renderCache.TrianglePixelCoords[iPixel];
+				if( offscreen.View[pixelCoord.y][pixelCoord.x] != renderCache.Triangle3dColorList[iTriangle] ) {
+					offscreen.View[pixelCoord.y][pixelCoord.x]								= renderCache.Triangle3dColorList[iTriangle];
 					++pixelsDrawn;
 				}
+				else
+					++pixelsSkipped;
 			}
+			error_if(errored(::llc::drawLine(offscreenMetrics, ::llc::SLine2D<int32_t>{renderCache.Triangle2dToDraw[iTriangle].A, renderCache.Triangle2dToDraw[iTriangle].B}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
+			error_if(errored(::llc::drawLine(offscreenMetrics, ::llc::SLine2D<int32_t>{renderCache.Triangle2dToDraw[iTriangle].B, renderCache.Triangle2dToDraw[iTriangle].C}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
+			error_if(errored(::llc::drawLine(offscreenMetrics, ::llc::SLine2D<int32_t>{renderCache.Triangle2dToDraw[iTriangle].C, renderCache.Triangle2dToDraw[iTriangle].A}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
 		}
+	}
+	static constexpr const ::llc::SColorBGRA									color										= ::llc::YELLOW;
+	for(uint32_t iPixel = 0, pixCount = renderCache.WireframePixelCoords.size(); iPixel < pixCount; ++iPixel) {
+		const ::llc::SCoord2<int32_t>												& pixelCoord								= renderCache.WireframePixelCoords[iPixel];
+		if( offscreen.View[pixelCoord.y][pixelCoord.x] != color ) {
+			offscreen.View[pixelCoord.y][pixelCoord.x]								= color;
+			++pixelsDrawn;
+		}
+		else
+			++pixelsSkipped;
 	}
 	return pixelsDrawn;
 }
