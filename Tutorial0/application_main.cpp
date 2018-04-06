@@ -116,9 +116,9 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	//viewMatrix.LookAt(camera.Position, camera.Target, cameraUp);
 
 	//------------------------------------------------ Lights
-	::llc::SCoord3<float>														& lightPos									= applicationInstance.LightPosition;
-	lightPos.RotateY(frameInfo.Microseconds.LastFrame / 250000.0f);
-	lightPos.Normalize();
+	::llc::SCoord3<float>														& lightDir									= applicationInstance.LightDirection;
+	lightDir.RotateY(frameInfo.Microseconds.LastFrame / 250000.0f);
+	lightDir.Normalize();
 
 	//------------------------------------------------ 
 	applicationInstance.BoxPivot.Scale										= {.5f, 1.0f, 2.5f};

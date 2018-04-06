@@ -8,8 +8,8 @@
 #define APPLICATION_H_098273498237423
 
 struct SRenderCache {
-						::llc::array_pod<::llc::SCoord2<int32_t>>			TrianglePixelCoords;
-						::llc::array_pod<::llc::SCoord2<int32_t>>			WireframePixelCoords;
+						::llc::array_pod<::llc::SCoord2<int32_t>>			TrianglePixelCoords							= {};
+						::llc::array_pod<::llc::SCoord2<int32_t>>			WireframePixelCoords						= {};
 
 						::llc::array_pod<::llc::SColorBGRA>					Triangle3dColorList							= {};
 						::llc::array_pod<::llc::SCoord3<float>>				TransformedNormals							= {};
@@ -34,12 +34,9 @@ struct SApplication {
 						::llc::SModelGeometry	<float>						Box											= {};
 						::llc::SModelPivot		<float>						BoxPivot									= {};
 
-						::llc::SMatrix4<float>								XViewport									= {};
-						::llc::SMatrix4<float>								XViewportInverse							= {};
-						::llc::SMatrix4<float>								XProjection									= {};
-						::llc::SMatrix4<float>								XView										= {};
-						::llc::SCoord3<float>								LightPosition								= {10, 5, 0};
-
+						::llc::SSceneTransforms								SceneTransforms								= {};
+						::llc::SCoord3<float>								LightDirection								= {10, 5, 0};
+						// cabildo 2954
 						::llc::SSceneCamera									Camera										= 
 							{ ::llc::SCameraPoints{{20, 2.5, 0}, {}}	
 							, ::llc::SCameraRange

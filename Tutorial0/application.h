@@ -38,7 +38,7 @@ struct SApplication {
 						::llc::SMatrix4<float>								XViewportInverse							= {};
 						::llc::SMatrix4<float>								XProjection									= {};
 						::llc::SMatrix4<float>								XView										= {};
-						::llc::SCoord3<float>								LightPosition								= {10, 5, 0};
+						::llc::SCoord3<float>								LightDirection								= {10, 5, 0};
 
 						::llc::SSceneCamera									Camera										= 
 							{ ::llc::SCameraPoints{{20, 2.5, 0}, {}}	

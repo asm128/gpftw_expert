@@ -77,9 +77,9 @@
 		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle2dToDraw.size(); iTriangle < triCount; ++iTriangle) // transform normals
 			renderCache.TransformedNormals[iTriangle]											= xWorld.TransformDirection(applicationInstance.Box.Normals[renderCache.Triangle3dIndices[renderCache.Triangle2d23dIndices[iTriangle]]]).Normalize();
 
-		const ::llc::SCoord3<float>													& lightPos									= applicationInstance.LightPosition;
+		const ::llc::SCoord3<float>													& lightDir									= applicationInstance.LightDirection;
 		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle2dToDraw.size(); iTriangle < triCount; ++iTriangle) { // calculate lighting 
-			const double																lightFactor									= renderCache.TransformedNormals[iTriangle].Dot(lightPos);
+			const double																lightFactor									= renderCache.TransformedNormals[iTriangle].Dot(lightDir);
 			renderCache.Triangle3dColorList[iTriangle]											= ((0 == (iBox % 2)) ? ::llc::GREEN : ::llc::MAGENTA) * lightFactor;
 		}
 

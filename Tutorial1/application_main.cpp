@@ -20,16 +20,20 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	::llc::STexture<::llc::SColorBGRA>											& offscreen									= applicationInstance.Framework.Offscreen;
 	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
 	if(newSize != offscreenMetrics) {
-		::llc::SMatrix4<float>														& projection								= applicationInstance.XProjection		;
-		::llc::SMatrix4<float>														& viewport									= applicationInstance.XViewport			;
-		::llc::SMatrix4<float>														& viewportInverse							= applicationInstance.XViewportInverse	;
+		::llc::SMatrix4<float>														& finalProjection							= applicationInstance.SceneTransforms.FinalProjection	;
+		::llc::SMatrix4<float>														& fieldOfView								= applicationInstance.SceneTransforms.FieldOfView		;
+		::llc::SMatrix4<float>														& viewport									= applicationInstance.SceneTransforms.Viewport			;
+		::llc::SMatrix4<float>														& viewportInverse							= applicationInstance.SceneTransforms.ViewportInverse	;
+		::llc::SMatrix4<float>														& viewportInverseCentered					= applicationInstance.SceneTransforms.ViewportInverse	;
 		viewport.Viewport(newSize, applicationInstance.Camera.Range.Far, applicationInstance.Camera.Range.Near);
 		viewportInverse															= viewport.GetInverse();
 		const ::llc::SCoord2<int32_t>												screenCenter								= {(int32_t)newSize.x / 2, (int32_t)newSize.y / 2};
-		viewportInverse._41														+= screenCenter.x;
-		viewportInverse._42														+= screenCenter.y;
-		projection.FieldOfView(applicationInstance.Camera.Range.Angle * ::llc::math_pi, newSize.x / (double)newSize.y, applicationInstance.Camera.Range.Near, applicationInstance.Camera.Range.Far);
-		projection																*= viewportInverse;
+		viewportInverseCentered													= viewportInverse;
+		viewportInverseCentered._41												+= screenCenter.x;
+		viewportInverseCentered._42												+= screenCenter.y;
+		fieldOfView.FieldOfView(applicationInstance.Camera.Range.Angle * ::llc::math_pi, newSize.x / (double)newSize.y, applicationInstance.Camera.Range.Near, applicationInstance.Camera.Range.Far);
+		finalProjection															= fieldOfView * viewportInverseCentered;
+		applicationInstance.SceneTransforms.FinalProjectionInverse				= finalProjection.GetInverse();
 	}
 	llc_necall(::llc::updateSizeDependentTarget(applicationInstance.Framework.Offscreen, newSize), "??");
 	return 0;
@@ -90,11 +94,13 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_ADD		])	{ updateProjection = true; applicationInstance.Camera.Range.Angle += frameInfo.Seconds.LastFrame * .05f; }
 	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_SUBTRACT	])	{ updateProjection = true; applicationInstance.Camera.Range.Angle -= frameInfo.Seconds.LastFrame * .05f; }
 	if(updateProjection) {
-		::llc::SMatrix4<float>														& projection								= applicationInstance.XProjection		;
+		::llc::SMatrix4<float>														& finalProjection							= applicationInstance.SceneTransforms.FinalProjection;
+		::llc::SMatrix4<float>														& fieldOfView								= applicationInstance.SceneTransforms.FieldOfView;
 		const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= framework.Offscreen.View.metrics();
-		projection.FieldOfView(applicationInstance.Camera.Range.Angle * ::llc::math_pi, offscreenMetrics.x / (double)offscreenMetrics.y, applicationInstance.Camera.Range.Near, applicationInstance.Camera.Range.Far);
-		::llc::SMatrix4<float>														& viewportInverse							= applicationInstance.XViewportInverse	;
-		projection																*= viewportInverse;
+		fieldOfView.FieldOfView(applicationInstance.Camera.Range.Angle * ::llc::math_pi, offscreenMetrics.x / (double)offscreenMetrics.y, applicationInstance.Camera.Range.Near, applicationInstance.Camera.Range.Far);
+		::llc::SMatrix4<float>														& viewportInverseCentered							= applicationInstance.SceneTransforms.ViewportInverseCentered;
+		finalProjection															= fieldOfView * viewportInverseCentered;
+		applicationInstance.SceneTransforms.FinalProjectionInverse				= finalProjection.GetInverse();
 	}
 
 	//------------------------------------------------ Camera
@@ -106,7 +112,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		const double																zoomWeight									= framework.Input.MouseCurrent.Deltas.z / 240.;
 		camera.Position															+= zoomVector * zoomWeight;
 	}
-	::llc::SMatrix4<float>														& viewMatrix								= applicationInstance.XView			;
+	::llc::SMatrix4<float>														& viewMatrix								= applicationInstance.SceneTransforms.View;
 	::llc::SCameraVectors														& cameraVectors								= applicationInstance.Camera.Vectors;
 	cameraVectors.Up														= {0, 1, 0};
 	cameraVectors.Front														= (camera.Target - camera.Position).Normalize();
@@ -116,9 +122,9 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	//viewMatrix.LookAt(camera.Position, camera.Target, cameraUp);
 
 	//------------------------------------------------ Lights
-	::llc::SCoord3<float>														& lightPos									= applicationInstance.LightPosition;
-	lightPos.RotateY(frameInfo.Microseconds.LastFrame / 250000.0f);
-	lightPos.Normalize();
+	::llc::SCoord3<float>														& lightDir									= applicationInstance.LightDirection;
+	lightDir.RotateY(frameInfo.Microseconds.LastFrame / 250000.0f);
+	lightDir.Normalize();
 
 	//------------------------------------------------ 
 	applicationInstance.BoxPivot.Scale										= {.5f, 1.0f, 2.5f};
