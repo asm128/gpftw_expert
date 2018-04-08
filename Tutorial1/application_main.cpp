@@ -20,22 +20,24 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	::llc::STexture<::llc::SColorBGRA>											& offscreen									= applicationInstance.Framework.Offscreen;
 	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
 	if(newSize != offscreenMetrics) {
-		::llc::SMatrix4<float>														& finalProjection							= applicationInstance.SceneTransforms.FinalProjection	;
-		::llc::SMatrix4<float>														& fieldOfView								= applicationInstance.SceneTransforms.FieldOfView		;
-		::llc::SMatrix4<float>														& viewport									= applicationInstance.SceneTransforms.Viewport			;
-		::llc::SMatrix4<float>														& viewportInverse							= applicationInstance.SceneTransforms.ViewportInverse	;
-		::llc::SMatrix4<float>														& viewportInverseCentered					= applicationInstance.SceneTransforms.ViewportInverse	;
-		viewport.Viewport(newSize, applicationInstance.Camera.Range.Far, applicationInstance.Camera.Range.Near);
+		::llc::SMatrix4<float>														& finalProjection							= applicationInstance.Scene.Transforms.FinalProjection	;
+		::llc::SMatrix4<float>														& fieldOfView								= applicationInstance.Scene.Transforms.FieldOfView		;
+		::llc::SMatrix4<float>														& viewport									= applicationInstance.Scene.Transforms.Viewport			;
+		::llc::SMatrix4<float>														& viewportInverse							= applicationInstance.Scene.Transforms.ViewportInverse	;
+		::llc::SMatrix4<float>														& viewportInverseCentered					= applicationInstance.Scene.Transforms.ViewportInverse	;
+		fieldOfView.FieldOfView(applicationInstance.Scene.Camera.Range.Angle * ::llc::math_pi, newSize.x / (double)newSize.y, applicationInstance.Scene.Camera.Range.Near, applicationInstance.Scene.Camera.Range.Far);
+		viewport.Viewport(newSize, applicationInstance.Scene.Camera.Range.Far, applicationInstance.Scene.Camera.Range.Near);
 		viewportInverse															= viewport.GetInverse();
 		const ::llc::SCoord2<int32_t>												screenCenter								= {(int32_t)newSize.x / 2, (int32_t)newSize.y / 2};
 		viewportInverseCentered													= viewportInverse;
 		viewportInverseCentered._41												+= screenCenter.x;
 		viewportInverseCentered._42												+= screenCenter.y;
-		fieldOfView.FieldOfView(applicationInstance.Camera.Range.Angle * ::llc::math_pi, newSize.x / (double)newSize.y, applicationInstance.Camera.Range.Near, applicationInstance.Camera.Range.Far);
 		finalProjection															= fieldOfView * viewportInverseCentered;
-		applicationInstance.SceneTransforms.FinalProjectionInverse				= finalProjection.GetInverse();
+		applicationInstance.Scene.Transforms.FinalProjectionInverse				= finalProjection.GetInverse();
 	}
-	llc_necall(::llc::updateSizeDependentTarget(applicationInstance.Framework.Offscreen, newSize), "??");
+	llc_necall(::llc::updateSizeDependentTarget(applicationInstance.Framework.Offscreen				, newSize), "??");
+	llc_necall(::llc::updateSizeDependentTarget(applicationInstance.Framework.OffscreenDepthStencil	, newSize), "??");
+	
 	return 0;
 }
 
@@ -70,7 +72,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 
 	// Load and pretransform our cube geometry.
 	static constexpr	const ::llc::SCoord3<float>								cubeCenter									= {0.5f, 0.5f, 0.5f};
-	::llc::generateCubeGeometry(applicationInstance.Box.Positions, applicationInstance.Box.Normals, applicationInstance.Box.UVs);
+	::llc::generateCubeGeometry(applicationInstance.Box);
 	for(uint32_t iTriangle = 0; iTriangle < 12; ++iTriangle) {
 		::llc::STriangle3D<float>													& transformedTriangle						= applicationInstance.Box.Positions[iTriangle];
 		transformedTriangle.A													-= cubeCenter;
@@ -91,20 +93,20 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	rvi_if(1, frameworkResult == 1, "Framework requested close. Terminating execution.");
 	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and this could cause an invalid memory access later on.");
 	bool																		updateProjection							= false;
-	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_ADD		])	{ updateProjection = true; applicationInstance.Camera.Range.Angle += frameInfo.Seconds.LastFrame * .05f; }
-	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_SUBTRACT	])	{ updateProjection = true; applicationInstance.Camera.Range.Angle -= frameInfo.Seconds.LastFrame * .05f; }
+	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_ADD		])	{ updateProjection = true; applicationInstance.Scene.Camera.Range.Angle += frameInfo.Seconds.LastFrame * .05f; }
+	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_SUBTRACT	])	{ updateProjection = true; applicationInstance.Scene.Camera.Range.Angle -= frameInfo.Seconds.LastFrame * .05f; }
 	if(updateProjection) {
-		::llc::SMatrix4<float>														& finalProjection							= applicationInstance.SceneTransforms.FinalProjection;
-		::llc::SMatrix4<float>														& fieldOfView								= applicationInstance.SceneTransforms.FieldOfView;
+		::llc::SMatrix4<float>														& finalProjection							= applicationInstance.Scene.Transforms.FinalProjection;
+		::llc::SMatrix4<float>														& fieldOfView								= applicationInstance.Scene.Transforms.FieldOfView;
 		const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= framework.Offscreen.View.metrics();
-		fieldOfView.FieldOfView(applicationInstance.Camera.Range.Angle * ::llc::math_pi, offscreenMetrics.x / (double)offscreenMetrics.y, applicationInstance.Camera.Range.Near, applicationInstance.Camera.Range.Far);
-		::llc::SMatrix4<float>														& viewportInverseCentered							= applicationInstance.SceneTransforms.ViewportInverseCentered;
+		fieldOfView.FieldOfView(applicationInstance.Scene.Camera.Range.Angle * ::llc::math_pi, offscreenMetrics.x / (double)offscreenMetrics.y, applicationInstance.Scene.Camera.Range.Near, applicationInstance.Scene.Camera.Range.Far);
+		::llc::SMatrix4<float>														& viewportInverseCentered							= applicationInstance.Scene.Transforms.ViewportInverseCentered;
 		finalProjection															= fieldOfView * viewportInverseCentered;
-		applicationInstance.SceneTransforms.FinalProjectionInverse				= finalProjection.GetInverse();
+		applicationInstance.Scene.Transforms.FinalProjectionInverse				= finalProjection.GetInverse();
 	}
 
 	//------------------------------------------------ Camera
-	::llc::SCameraPoints														& camera									= applicationInstance.Camera.Points;
+	::llc::SCameraPoints														& camera									= applicationInstance.Scene.Camera.Points;
 	camera.Position.RotateY(framework.Input.MouseCurrent.Deltas.x / 20.0f);
 	if(framework.Input.MouseCurrent.Deltas.z) {
 		::llc::SCoord3<float>														zoomVector									= camera.Position;
@@ -112,8 +114,8 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		const double																zoomWeight									= framework.Input.MouseCurrent.Deltas.z / 240.;
 		camera.Position															+= zoomVector * zoomWeight;
 	}
-	::llc::SMatrix4<float>														& viewMatrix								= applicationInstance.SceneTransforms.View;
-	::llc::SCameraVectors														& cameraVectors								= applicationInstance.Camera.Vectors;
+	::llc::SMatrix4<float>														& viewMatrix								= applicationInstance.Scene.Transforms.View;
+	::llc::SCameraVectors														& cameraVectors								= applicationInstance.Scene.Camera.Vectors;
 	cameraVectors.Up														= {0, 1, 0};
 	cameraVectors.Front														= (camera.Target - camera.Position).Normalize();
 	cameraVectors.Right														= cameraVectors.Up		.Cross(cameraVectors.Front).Normalize();
@@ -155,14 +157,14 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	char																		buffer		[256]							= {};
 	uint32_t																	
 	textLen																	= (uint32_t)sprintf_s(buffer, "[%u x %u]. FPS: %g. Last frame seconds: %g.", mainWindow.Size.x, mainWindow.Size.y, 1 / timer.LastTimeSeconds, timer.LastTimeSeconds);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Pixels drawn: %u. Pixels skipped: %u.", (uint32_t)applicationInstance.RenderCache.PixelsDrawn, (uint32_t)applicationInstance.RenderCache.PixelsSkipped);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dColorList  cache size: %u.", applicationInstance.RenderCache.Triangle3dColorList	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "TransformedNormals   cache size: %u.", applicationInstance.RenderCache.TransformedNormals	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dToDraw     cache size: %u.", applicationInstance.RenderCache.Triangle3dToDraw		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2dToDraw     cache size: %u.", applicationInstance.RenderCache.Triangle2dToDraw		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dIndices    cache size: %u.", applicationInstance.RenderCache.Triangle3dIndices		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2dIndices    cache size: %u.", applicationInstance.RenderCache.Triangle2dIndices		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2d23dIndices cache size: %u.", applicationInstance.RenderCache.Triangle2d23dIndices	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	textLen																	= (uint32_t)sprintf_s(buffer, "Triangles drawn: %u. Pixels drawn: %u. Pixels skipped: %u.", (uint32_t)applicationInstance.RenderCache.TrianglesDrawn, (uint32_t)applicationInstance.RenderCache.PixelsDrawn, (uint32_t)applicationInstance.RenderCache.PixelsSkipped);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dColorList  cache size: %u.", applicationInstance.RenderCache.Triangle3dColorList	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	//textLen																	= (uint32_t)sprintf_s(buffer, "TransformedNormals   cache size: %u.", applicationInstance.RenderCache.TransformedNormals	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dToDraw     cache size: %u.", applicationInstance.RenderCache.Triangle3dToDraw		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2dToDraw     cache size: %u.", applicationInstance.RenderCache.Triangle2dToDraw		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dIndices    cache size: %u.", applicationInstance.RenderCache.Triangle3dIndices		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2dIndices    cache size: %u.", applicationInstance.RenderCache.Triangle2dIndices		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2d23dIndices cache size: %u.", applicationInstance.RenderCache.Triangle2d23dIndices	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	//::textDrawAlignedFixedSize(offscreenView, applicationInstance.TextureFontMonochrome.View, fontAtlasView.metrics(), --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen}, textColor);
 	return 0;																																																
 }

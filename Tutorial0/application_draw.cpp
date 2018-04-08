@@ -40,9 +40,9 @@
 		for(uint32_t iTriangle = 0; iTriangle < 12; ++iTriangle) {
 			::llc::STriangle3D<float>													transformedTriangle3D						= applicationInstance.Box.Positions[iTriangle];
 			::llc::transform(transformedTriangle3D, xWorld * xViewProjection);
-			if(transformedTriangle3D.A.z >= fFar	|| transformedTriangle3D.B.z >= fFar	|| transformedTriangle3D.C.z >= fFar ) 
+			if(transformedTriangle3D.A.z >= fFar	&& transformedTriangle3D.B.z >= fFar	&& transformedTriangle3D.C.z >= fFar ) 
 				continue;
-			if(transformedTriangle3D.A.z <= fNear	|| transformedTriangle3D.B.z <= fNear	|| transformedTriangle3D.C.z <= fNear) 
+			if(transformedTriangle3D.A.z <= fNear	&& transformedTriangle3D.B.z <= fNear	&& transformedTriangle3D.C.z <= fNear) 
 				continue;
 			llc_necall(renderCache.Triangle3dToDraw		.push_back(transformedTriangle3D)	, "Out of memory?");
 			llc_necall(renderCache.Triangle3dIndices	.push_back((int16_t)iTriangle)		, "Out of memory?");
@@ -75,7 +75,7 @@
 		llc_necall(renderCache.TransformedNormals	.resize(renderCache.Triangle2dToDraw.size()), "Out of memory?");
 		llc_necall(renderCache.Triangle3dColorList	.resize(renderCache.Triangle2dToDraw.size()), "Out of memory?");
 		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle2dToDraw.size(); iTriangle < triCount; ++iTriangle) // transform normals
-			renderCache.TransformedNormals[iTriangle]											= xWorld.TransformDirection(applicationInstance.Box.Normals[renderCache.Triangle3dIndices[renderCache.Triangle2d23dIndices[iTriangle]]]).Normalize();
+			renderCache.TransformedNormals[iTriangle]											= xWorld.TransformDirection(applicationInstance.Box.NormalsTriangle[renderCache.Triangle3dIndices[renderCache.Triangle2d23dIndices[iTriangle]]]).Normalize();
 
 		const ::llc::SCoord3<float>													& lightDir									= applicationInstance.LightDirection;
 		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle2dToDraw.size(); iTriangle < triCount; ++iTriangle) { // calculate lighting 

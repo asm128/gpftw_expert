@@ -66,7 +66,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 
 	// Load and pretransform our cube geometry.
 	static constexpr	const ::llc::SCoord3<float>								cubeCenter									= {0.5f, 0.5f, 0.5f};
-	::llc::generateCubeGeometry(applicationInstance.Box.Positions, applicationInstance.Box.Normals, applicationInstance.Box.UVs);
+	::llc::generateCubeGeometry(applicationInstance.Box);
 	for(uint32_t iTriangle = 0; iTriangle < 12; ++iTriangle) {
 		::llc::STriangle3D<float>													& transformedTriangle						= applicationInstance.Box.Positions[iTriangle];
 		transformedTriangle.A													-= cubeCenter;
