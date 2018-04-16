@@ -112,7 +112,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		::llc::SCoord3<float>														zoomVector									= camera.Position;
 		zoomVector.Normalize();
 		const double																zoomWeight									= framework.Input.MouseCurrent.Deltas.z / 240.;
-		camera.Position															+= zoomVector * zoomWeight;
+		camera.Position															+= zoomVector * zoomWeight * .5;
 	}
 	::llc::SMatrix4<float>														& viewMatrix								= applicationInstance.Scene.Transforms.View;
 	::llc::SCameraVectors														& cameraVectors								= applicationInstance.Scene.Camera.Vectors;
@@ -120,8 +120,8 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	cameraVectors.Front														= (camera.Target - camera.Position).Normalize();
 	cameraVectors.Right														= cameraVectors.Up		.Cross(cameraVectors.Front).Normalize();
 	cameraVectors.Up														= cameraVectors.Front	.Cross(cameraVectors.Right).Normalize();
-	viewMatrix.View3D(camera.Position, cameraVectors.Right, cameraVectors.Up, cameraVectors.Front);
-	//viewMatrix.LookAt(camera.Position, camera.Target, cameraUp);
+	//viewMatrix.View3D(camera.Position, cameraVectors.Right, cameraVectors.Up, cameraVectors.Front);
+	viewMatrix.LookAt(camera.Position, {0, 0, 0}, {0, 1, 0});
 
 	//------------------------------------------------ Lights
 	::llc::SCoord3<float>														& lightDir									= applicationInstance.LightDirection;
@@ -129,7 +129,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	lightDir.Normalize();
 
 	//------------------------------------------------ 
-	applicationInstance.BoxPivot.Scale										= {.5f, 1.0f, 2.5f};
+	applicationInstance.BoxPivot.Scale										= {1.01f, 1.0f, .01f};
 	applicationInstance.BoxPivot.Orientation.y								+= (float)(sinf((float)frameInfo.Seconds.Total / 2) * ::llc::math_pi);
 	applicationInstance.BoxPivot.Orientation.w								= 1;
 	applicationInstance.BoxPivot.Orientation.Normalize();

@@ -9,6 +9,7 @@
 
 struct SRenderCache {
 						::llc::array_pod<::llc::SCoord2<int32_t>>			TrianglePixelCoords							= {};
+						::llc::array_pod<::llc::STriangleWeights<double>>	TrianglePixelWeights						= {};
 						::llc::array_pod<::llc::SCoord2<int32_t>>			WireframePixelCoords						= {};
 
 						::llc::array_pod<::llc::SColorBGRA>					Triangle3dColorList							= {};

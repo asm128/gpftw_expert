@@ -7,6 +7,7 @@
 	::llc::STexture<uint32_t>													& offscreenDepth							= framework.OffscreenDepthStencil;
 	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
 	::memset(offscreen		.Texels.begin(), 0, sizeof(::llc::SFramework::TOffscreen::TTexel)	* offscreen			.Texels.size());	// Clear target.
+	//::memset(offscreenDepth	.Texels.begin(), -1, sizeof(uint32_t)								* offscreenDepth	.Texels.size());	// Clear target.
 	::memset(offscreenDepth	.Texels.begin(), -1, sizeof(uint32_t)								* offscreenDepth	.Texels.size());	// Clear target.
 
 	::SRenderCache																& renderCache								= applicationInstance.RenderCache;
@@ -25,14 +26,14 @@
 	renderCache.TrianglesDrawn												= 0;
 	const ::llc::SCoord2<int32_t>												offscreenMetricsI							= offscreenMetrics.Cast<int32_t>();
 	const ::llc::SCoord3<float>													screenCenter								= {offscreenMetricsI.x / 2.0f, offscreenMetricsI.y / 2.0f, };
-	for(uint32_t iBox = 0; iBox < 20; ++iBox) {
+	for(uint32_t iBox = 0; iBox < 10; ++iBox) {
 		applicationInstance.BoxPivot.Position.x									= (float)iBox;
-		applicationInstance.BoxPivot.Scale.z									= iBox / 10.0f + .1f;
-		applicationInstance.BoxPivot.Scale.y									= powf(2.0f, (float)iBox / 2) * .0125f;
+		applicationInstance.BoxPivot.Scale.z									= iBox / 2.5f + .1f;
+		applicationInstance.BoxPivot.Scale.y									= iBox / 10.0f + .1f; //powf(2.0f, (float)iBox / 2) * .0125f;
 		xWorld		.Scale			(applicationInstance.BoxPivot.Scale, true);
 		xRotation	.SetOrientation	((applicationInstance.BoxPivot.Orientation + ::llc::SQuaternion<float>{0, (float)(iBox / ::llc::math_2pi), 0, 0}).Normalize());
 		xWorld																	= xWorld * xRotation;
-		xWorld		.SetTranslation(applicationInstance.BoxPivot.Position, false);
+		xWorld		.SetTranslation	(applicationInstance.BoxPivot.Position, false);
 		::llc::clear
 			( renderCache.Triangle3dToDraw		
 			, renderCache.Triangle2dToDraw		
@@ -42,18 +43,30 @@
 		const ::llc::SMatrix4<float>												finalTransform								= xWorld * xViewProjection;
 		for(uint32_t iTriangle = 0, triCount = applicationInstance.Box.Positions.size(); iTriangle < triCount; ++iTriangle) {
 			::llc::STriangle3D<float>													transformedTriangle3D						= applicationInstance.Box.Positions[iTriangle];
-			::llc::transform(transformedTriangle3D, finalTransform);
-			//::llc::translate(transformedTriangle3D, screenCenter);
-
-			// Check against far and near planes
+			::llc::transform(transformedTriangle3D, xWorld);
+			::llc::transform(transformedTriangle3D, viewMatrix);
 			if( transformedTriangle3D.A.z >= fFar
 			 && transformedTriangle3D.B.z >= fFar	
 			 && transformedTriangle3D.C.z >= fFar) 
 				continue;
-			if( transformedTriangle3D.A.z <= fNear	
-			 && transformedTriangle3D.B.z <= fNear	
-			 && transformedTriangle3D.C.z <= fNear) 
+			if( transformedTriangle3D.A.z <= (fNear + .01) 	
+			 || transformedTriangle3D.B.z <= (fNear + .01) 	
+			 || transformedTriangle3D.C.z <= (fNear + .01) ) 
 				continue;
+
+			float																		oldzA										= transformedTriangle3D.A.z;
+			float																		oldzB										= transformedTriangle3D.B.z;
+			float																		oldzC										= transformedTriangle3D.C.z;
+
+			::llc::transform(transformedTriangle3D, projection);
+			transformedTriangle3D.A.z												= oldzA;
+			transformedTriangle3D.B.z												= oldzB;
+			transformedTriangle3D.C.z												= oldzC;
+
+
+			//::llc::translate(transformedTriangle3D, screenCenter);
+
+			// Check against far and near planes
 			// Check against screen limits
 			if(transformedTriangle3D.A.x < 0 && transformedTriangle3D.B.x < 0 && transformedTriangle3D.C.x < 0) 
 				continue;
@@ -103,7 +116,8 @@
 			++renderCache.TrianglesDrawn;
 			//error_if(errored(::llc::drawTriangle(offscreen.View, renderCache.Triangle3dColorList[iTriangle], renderCache.Triangle2dToDraw[iTriangle])), "Not sure if these functions could ever fail");
 			renderCache.TrianglePixelCoords.clear();
-			error_if(errored(::llc::drawTriangle(offscreenDepth.View, fFar, fNear, renderCache.Triangle3dToDraw[iTriangle], renderCache.TrianglePixelCoords)), "Not sure if these functions could ever fail");
+			renderCache.TrianglePixelWeights.clear();
+			error_if(errored(::llc::drawTriangle(offscreenDepth.View, fFar, fNear, renderCache.Triangle3dToDraw[iTriangle], renderCache.TrianglePixelCoords, renderCache.TrianglePixelWeights)), "Not sure if these functions could ever fail");
 			for(uint32_t iPixel = 0, pixCount = renderCache.TrianglePixelCoords.size(); iPixel < pixCount; ++iPixel) {
 				const ::llc::SCoord2<int32_t>												& pixelCoord								= renderCache.TrianglePixelCoords[iPixel];
 				if( offscreen.View[pixelCoord.y][pixelCoord.x] != renderCache.Triangle3dColorList[iTriangle] ) {
