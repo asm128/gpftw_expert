@@ -16,7 +16,7 @@ LLC_DEFINE_APPLICATION_ENTRY_POINT(::SApplication);
 					::SApplication										* g_ApplicationInstance						= 0;
 
 static				::llc::error_t										updateSizeDependentResources				(::SApplication& applicationInstance)											{ 
-	const ::llc::SCoord2<uint32_t>												& newSize									= applicationInstance.Framework.MainDisplay.Size; 
+	const ::llc::SCoord2<uint32_t>												newSize									= applicationInstance.Framework.MainDisplay.Size / 2; 
 	::llc::STexture<::llc::SColorBGRA>											& offscreen									= applicationInstance.Framework.Offscreen;
 	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
 	if(newSize != offscreenMetrics) {
@@ -96,11 +96,21 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_ADD		])	{ updateProjection = true; applicationInstance.Scene.Camera.Range.Angle += frameInfo.Seconds.LastFrame * .05f; }
 	if(applicationInstance.Framework.Input.KeyboardCurrent.KeyState[VK_SUBTRACT	])	{ updateProjection = true; applicationInstance.Scene.Camera.Range.Angle -= frameInfo.Seconds.LastFrame * .05f; }
 	if(updateProjection) {
-		::llc::SMatrix4<float>														& finalProjection							= applicationInstance.Scene.Transforms.FinalProjection;
-		::llc::SMatrix4<float>														& fieldOfView								= applicationInstance.Scene.Transforms.FieldOfView;
-		const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= framework.Offscreen.View.metrics();
+		::llc::STexture<::llc::SColorBGRA>											& offscreen									= framework.Offscreen;
+		const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
+
+		::llc::SMatrix4<float>														& finalProjection							= applicationInstance.Scene.Transforms.FinalProjection	;
+		::llc::SMatrix4<float>														& fieldOfView								= applicationInstance.Scene.Transforms.FieldOfView		;
+		::llc::SMatrix4<float>														& viewport									= applicationInstance.Scene.Transforms.Viewport			;
+		::llc::SMatrix4<float>														& viewportInverse							= applicationInstance.Scene.Transforms.ViewportInverse	;
+		::llc::SMatrix4<float>														& viewportInverseCentered					= applicationInstance.Scene.Transforms.ViewportInverse	;
 		fieldOfView.FieldOfView(applicationInstance.Scene.Camera.Range.Angle * ::llc::math_pi, offscreenMetrics.x / (double)offscreenMetrics.y, applicationInstance.Scene.Camera.Range.Near, applicationInstance.Scene.Camera.Range.Far);
-		::llc::SMatrix4<float>														& viewportInverseCentered							= applicationInstance.Scene.Transforms.ViewportInverseCentered;
+		viewport.Viewport(offscreenMetrics, applicationInstance.Scene.Camera.Range.Far, applicationInstance.Scene.Camera.Range.Near);
+		viewportInverse															= viewport.GetInverse();
+		const ::llc::SCoord2<int32_t>												screenCenter								= {(int32_t)offscreenMetrics.x / 2, (int32_t)offscreenMetrics.y / 2};
+		viewportInverseCentered													= viewportInverse;
+		viewportInverseCentered._41												+= screenCenter.x;
+		viewportInverseCentered._42												+= screenCenter.y;
 		finalProjection															= fieldOfView * viewportInverseCentered;
 		applicationInstance.Scene.Transforms.FinalProjectionInverse				= finalProjection.GetInverse();
 	}
@@ -120,12 +130,12 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	cameraVectors.Front														= (camera.Target - camera.Position).Normalize();
 	cameraVectors.Right														= cameraVectors.Up		.Cross(cameraVectors.Front).Normalize();
 	cameraVectors.Up														= cameraVectors.Front	.Cross(cameraVectors.Right).Normalize();
-	//viewMatrix.View3D(camera.Position, cameraVectors.Right, cameraVectors.Up, cameraVectors.Front);
-	viewMatrix.LookAt(camera.Position, {0, 0, 0}, {0, 1, 0});
+	viewMatrix.View3D(camera.Position, cameraVectors.Right, cameraVectors.Up, cameraVectors.Front);
+	//viewMatrix.LookAt(camera.Position, {0, 0, 0}, {0, 1, 0});
 
 	//------------------------------------------------ Lights
 	::llc::SCoord3<float>														& lightDir									= applicationInstance.LightDirection;
-	lightDir.RotateY(frameInfo.Microseconds.LastFrame / 250000.0f);
+	lightDir.RotateY(frameInfo.Microseconds.LastFrame / 1000000.0f);
 	lightDir.Normalize();
 
 	//------------------------------------------------ 
