@@ -49,9 +49,10 @@
 			 && transformedTriangle3D.B.z >= fFar	
 			 && transformedTriangle3D.C.z >= fFar) 
 				continue;
-			if( transformedTriangle3D.A.z <= (fNear + .01) 	
-			 || transformedTriangle3D.B.z <= (fNear + .01) 	
-			 || transformedTriangle3D.C.z <= (fNear + .01) ) 
+			if( (transformedTriangle3D.A.z <= fNear) // && transformedTriangle3D.B.z <= (fNear + .01) )  	
+			 || (transformedTriangle3D.B.z <= fNear) // && transformedTriangle3D.C.z <= (fNear + .01) )  	
+			 || (transformedTriangle3D.C.z <= fNear) // && transformedTriangle3D.A.z <= (fNear + .01) )  	
+			 ) 
 				continue;
 
 			float																		oldzA										= transformedTriangle3D.A.z;
@@ -62,10 +63,7 @@
 			transformedTriangle3D.A.z												= oldzA;
 			transformedTriangle3D.B.z												= oldzB;
 			transformedTriangle3D.C.z												= oldzC;
-
-
 			//::llc::translate(transformedTriangle3D, screenCenter);
-
 			// Check against far and near planes
 			// Check against screen limits
 			if(transformedTriangle3D.A.x < 0 && transformedTriangle3D.B.x < 0 && transformedTriangle3D.C.x < 0) 
@@ -100,7 +98,7 @@
 			::llc::SCoord3<float>														& transformedNormalTri						= renderCache.TransformedNormalsTriangle[iTriangle];
 			transformedNormalTri													= xWorld.TransformDirection(applicationInstance.Box.NormalsTriangle[iTriangle]).Normalize();
 			const double																lightFactor									= transformedNormalTri.Dot(lightDir);
-			renderCache.Triangle3dColorList[iTriangle]								= ((0 == (iBox % 2)) ? ::llc::GREEN : ::llc::MAGENTA) * lightFactor;
+			renderCache.Triangle3dColorList[iTriangle]								= ((0 == (iBox % 2)) ? ::llc::LIGHTGRAY : ::llc::DARKGRAY) * lightFactor;
 			::llc::SCoord3<float>														& transformedNormalVer0						= renderCache.TransformedNormalsVertex[iTriangle].A;
 			::llc::SCoord3<float>														& transformedNormalVer1						= renderCache.TransformedNormalsVertex[iTriangle].B;
 			::llc::SCoord3<float>														& transformedNormalVer2						= renderCache.TransformedNormalsVertex[iTriangle].C;
@@ -114,14 +112,17 @@
 			//if(cameraFactor > .65)
 			//	continue;
 			++renderCache.TrianglesDrawn;
-			//error_if(errored(::llc::drawTriangle(offscreen.View, renderCache.Triangle3dColorList[iTriangle], renderCache.Triangle2dToDraw[iTriangle])), "Not sure if these functions could ever fail");
 			renderCache.TrianglePixelCoords.clear();
 			renderCache.TrianglePixelWeights.clear();
 			error_if(errored(::llc::drawTriangle(offscreenDepth.View, fFar, fNear, renderCache.Triangle3dToDraw[iTriangle], renderCache.TrianglePixelCoords, renderCache.TrianglePixelWeights)), "Not sure if these functions could ever fail");
 			for(uint32_t iPixel = 0, pixCount = renderCache.TrianglePixelCoords.size(); iPixel < pixCount; ++iPixel) {
 				const ::llc::SCoord2<int32_t>												& pixelCoord								= renderCache.TrianglePixelCoords[iPixel];
+				const ::llc::STriangleWeights<double>										& pixelWeights								= renderCache.TrianglePixelWeights[iPixel];
 				if( offscreen.View[pixelCoord.y][pixelCoord.x] != renderCache.Triangle3dColorList[iTriangle] ) {
-					offscreen.View[pixelCoord.y][pixelCoord.x]								= renderCache.Triangle3dColorList[iTriangle];
+					::llc::SColorFloat															interpolatedColor							= ((::llc::LIGHTRED * pixelWeights.A) + (::llc::LIGHTGREEN * pixelWeights.B) + (::llc::LIGHTBLUE * pixelWeights.C));
+					::llc::SColorBGRA															interpolatedBGRA							= ::llc::SColorBGRA{uint8_t(interpolatedColor.b * 255), uint8_t(interpolatedColor.g * 255), uint8_t(interpolatedColor.r * 255), uint8_t(interpolatedColor.a * 255)};
+					::llc::SColorBGRA															& targetColorCell							= offscreen.View[pixelCoord.y][pixelCoord.x];
+					targetColorCell															= interpolatedBGRA;
 					++pixelsDrawn;
 				}
 				else
