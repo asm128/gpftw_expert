@@ -7,6 +7,10 @@
 	::llc::STexture<uint32_t>													& offscreenDepth							= framework.OffscreenDepthStencil;
 	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
 	::memset(offscreen		.Texels.begin(), 0, sizeof(::llc::SFramework::TOffscreen::TTexel)	* offscreen			.Texels.size());	// Clear target.
+	for(uint32_t y = 0, yMax = offscreenMetrics.y; y < yMax; ++y)
+	for(uint32_t x = 0, xMax = offscreenMetrics.x; x < xMax; ++x)
+		offscreen.View[y][x]													= {(uint8_t)(y / 10), 0, 0, 0xFF};
+
 	//::memset(offscreenDepth	.Texels.begin(), -1, sizeof(uint32_t)								* offscreenDepth	.Texels.size());	// Clear target.
 	::memset(offscreenDepth	.Texels.begin(), -1, sizeof(uint32_t)								* offscreenDepth	.Texels.size());	// Clear target.
 
@@ -124,15 +128,23 @@
 					{ uvBox.A.x * pixelWeights.A + uvBox.B.x * pixelWeights.B + uvBox.C.x * pixelWeights.C
 					, uvBox.A.y * pixelWeights.A + uvBox.B.y * pixelWeights.B + uvBox.C.y * pixelWeights.C
 					};
-				::llc::SCoord2<int32_t>														uvcoords									= 
-					{ (int32_t)((uint32_t)(uv.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x)
-					, (int32_t)((uint32_t)(uv.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y)
-					};
-				if(applicationInstance.TextureBox[uvcoords.y][uvcoords.x] == ::llc::SColorBGRA{0xFF, 0, 0xFF, 0xFF}) {
-					++pixelsSkipped;
-					continue;
+				::llc::SColorBGRA															interpolatedBGRA;
+				if( 0 == applicationInstance.TextureBox.View.metrics().x
+				 ||	0 == applicationInstance.TextureBox.View.metrics().y
+				 ) 
+					interpolatedBGRA														= bleh * 2.0 * interpolatedColor + ambientColor;
+				else {
+					::llc::SCoord2<int32_t>														uvcoords									= 
+						{ (int32_t)((uint32_t)(uv.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x)
+						, (int32_t)((uint32_t)(uv.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y)
+						};
+					::llc::SColorBGRA															& srcTexel									= applicationInstance.TextureBox[uvcoords.y][uvcoords.x];
+					if(srcTexel == ::llc::SColorBGRA{0xFF, 0, 0xFF, 0xFF}) {
+						++pixelsSkipped;
+						continue;
+					}
+					interpolatedBGRA														= ::llc::SColorFloat(srcTexel) * bleh * 2.0 * interpolatedColor + ambientColor;
 				}
-				::llc::SColorBGRA															interpolatedBGRA							= ::llc::SColorFloat(applicationInstance.TextureBox[uvcoords.y][uvcoords.x]) * bleh * 2.0 * interpolatedColor + ambientColor;
 				::llc::SColorBGRA															& targetColorCell							= offscreen.View[pixelCoord.y][pixelCoord.x];
 				if( targetColorCell == interpolatedBGRA ) 
 					++pixelsSkipped;
