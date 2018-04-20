@@ -75,16 +75,19 @@
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform).$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(ProjectDir)..\..\$(Platform).$(Configuration)\</OutDir>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform).$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(ProjectDir)..\..\$(Platform).$(Configuration)\</OutDir>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform).$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(ProjectDir)..\..\$(Platform).$(Configuration)\</OutDir>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
