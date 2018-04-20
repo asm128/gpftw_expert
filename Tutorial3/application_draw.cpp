@@ -86,7 +86,7 @@
 			 )
 				continue;
 			::llc::transform(triangle3DWorld, xWorld);
-			llc_necall(renderCache.Triangle3dIndices	.push_back((int16_t)iTriangle)		, "Out of memory?");
+			llc_necall(renderCache.Triangle3dIndices	.push_back(iTriangle)		, "Out of memory?");
 			llc_necall(renderCache.Triangle3dToDraw		.push_back(transformedTriangle3D)	, "Out of memory?");
 		}
 		llc_necall(::llc::resize(renderCache.Triangle3dIndices.size()

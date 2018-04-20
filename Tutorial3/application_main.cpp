@@ -52,56 +52,64 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	return 0;
 }
 
+					::llc::error_t										bmpOrBmgLoad								(::llc::view_string bmpFileName, ::llc::STexture<::llc::SColorBGRA>& loaded)		{
+	::llc::view_const_string													bmpFileNameC								= {bmpFileName.begin(), bmpFileName.size()};
+	if(errored(::llc::bmpFileLoad(bmpFileNameC, loaded))) {
+		error_printf("Failed to load bitmap from file: %s.", bmpFileNameC.begin());
+		bmpFileName[bmpFileName.size() - 2]										= 'g';
+		llc_necall(::llc::bmgFileLoad(bmpFileNameC, loaded), "Failed to load bitmap from file: %s.", bmpFileNameC.begin());
+	}
+	return 0;
+}
+
 					::llc::error_t										mainWindowCreate							(::llc::SDisplay& mainWindow, HINSTANCE hInstance);
 					::llc::error_t										setup										(::SApplication& applicationInstance)											{ 
 	g_ApplicationInstance													= &applicationInstance;
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
-	char																		bmpFileName1	[]							= "gradient_gray.bmp";//"pow_core_0.bmp";
-	if(errored(::llc::bmpFileLoad((::llc::view_const_string)bmpFileName1, applicationInstance.TextureBox))) {
-		error_printf("Failed to load bitmap from file: %s.", bmpFileName1);
-		bmpFileName1[::llc::size(bmpFileName1) - 2]								= 'g';
-		if(errored(::llc::bmgFileLoad((::llc::view_const_string)bmpFileName1, applicationInstance.TextureBox))) 
-			error_printf("Failed to load bitmap from file: %s.", bmpFileName1);
-	}
+	char																		bmpFileName1	[]							= "test.bmp";//"pow_core_0.bmp";
 	char																		bmpFileName2	[]							= "Codepage-437-24.bmp";
-	if(errored(::llc::bmpFileLoad((::llc::view_const_string)bmpFileName2, applicationInstance.TextureFont))) {
-		error_printf("Failed to load bitmap from file: %s.", bmpFileName2);
-		bmpFileName2[::llc::size(bmpFileName2) - 2]								= 'g';
-		if(errored(::llc::bmgFileLoad((::llc::view_const_string)bmpFileName2, applicationInstance.TextureFont))) 
-			error_printf("Failed to load bitmap from file: %s.", bmpFileName2);
-	}
+	ree_if(errored(::bmpOrBmgLoad(bmpFileName1, applicationInstance.TextureBox)), "");
+	ree_if(errored(::bmpOrBmgLoad(bmpFileName2, applicationInstance.TextureFont)), "");
 	const ::llc::SCoord2<uint32_t>												& textureFontMetrics						= applicationInstance.TextureFont.View.metrics();
 	applicationInstance.TextureFontMonochrome.resize(textureFontMetrics);
 	for(uint32_t y = 0, yMax = textureFontMetrics.y; y < yMax; ++y)
-	for(uint32_t x = 0, xMax = textureFontMetrics.x; x < xMax; ++x)
+	for(uint32_t x = 0, xMax = textureFontMetrics.x; x < xMax; ++x) {
+		const ::llc::SColorBGRA														& srcColor									= applicationInstance.TextureFont.View[y][x];
 		applicationInstance.TextureFontMonochrome.View[y * textureFontMetrics.x + x]	
-		=	0 != applicationInstance.TextureFont.View[y][x].r
-		||	0 != applicationInstance.TextureFont.View[y][x].g
-		||	0 != applicationInstance.TextureFont.View[y][x].b
-		;
+			=	0 != srcColor.r
+			||	0 != srcColor.g
+			||	0 != srcColor.b
+			;
+	}
+
+	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and textures and this could cause an invalid memory access later on.");
 
 	// Load and pretransform our cube geometry.
-	const ::llc::SCoord3<float>													gridCenter									= {applicationInstance.TextureBox.View.metrics().x / 2.0f, 0, applicationInstance.TextureBox.View.metrics().y / 2.0f};
-	::llc::generateGridGeometry(applicationInstance.TextureBox.View.metrics(), applicationInstance.Box);
-	for(uint32_t iTriangle = 0; iTriangle < applicationInstance.Box.Positions.size(); ++iTriangle) {
-		::llc::STriangle3D<float>													& transformedTriangle						= applicationInstance.Box.Positions[iTriangle];
-		::llc::STriangle2D<float>													& uv										= applicationInstance.Box.UVs[iTriangle];
+	const ::llc::grid_view<::llc::SColorBGRA>									& textureBoxView							= applicationInstance.TextureBox.View;
+	const ::llc::SCoord2<uint32_t>												& textureBoxMetrics							= textureBoxView.metrics();
+	const ::llc::SCoord3<float>													gridCenter									= {textureBoxMetrics.x / 2.0f, 0, textureBoxMetrics.y / 2.0f};
+	::llc::SModelGeometry<float>												& geometryBox								= applicationInstance.Box;
+
+	::llc::generateGridGeometry(textureBoxMetrics, geometryBox);
+
+	for(uint32_t iTriangle = 0; iTriangle < geometryBox.Positions.size(); ++iTriangle) {
+		::llc::STriangle3D<float>													& transformedTriangle						= geometryBox.Positions	[iTriangle];
+		::llc::STriangle2D<float>													& uv										= geometryBox.UVs		[iTriangle];
 		transformedTriangle.A													-= gridCenter;
 		transformedTriangle.B													-= gridCenter;
 		transformedTriangle.C													-= gridCenter;
 
-		transformedTriangle.A.y													= applicationInstance.TextureBox.View[uint32_t(uv.A.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y][uint32_t(uv.A.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x].b / 255.0f;
-		transformedTriangle.B.y													= applicationInstance.TextureBox.View[uint32_t(uv.B.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y][uint32_t(uv.B.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x].b / 255.0f;
-		transformedTriangle.C.y													= applicationInstance.TextureBox.View[uint32_t(uv.C.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y][uint32_t(uv.C.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x].b / 255.0f;
-
+		transformedTriangle.A.y													= textureBoxView[uint32_t(uv.A.y * textureBoxMetrics.y) % textureBoxMetrics.y][uint32_t(uv.A.x * textureBoxMetrics.x) % textureBoxMetrics.x].b / 255.0f;
+		transformedTriangle.B.y													= textureBoxView[uint32_t(uv.B.y * textureBoxMetrics.y) % textureBoxMetrics.y][uint32_t(uv.B.x * textureBoxMetrics.x) % textureBoxMetrics.x].b / 255.0f;
+		transformedTriangle.C.y													= textureBoxView[uint32_t(uv.C.y * textureBoxMetrics.y) % textureBoxMetrics.y][uint32_t(uv.C.x * textureBoxMetrics.x) % textureBoxMetrics.x].b / 255.0f;
 	}
-	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and textures and this could cause an invalid memory access later on.");
+
 	applicationInstance.BoxPivot.Orientation								= {0,0,0,1}; 
-	for(uint32_t iTriangle = 0; iTriangle < applicationInstance.Box.Positions.size(); ++iTriangle) {
-		const ::llc::STriangle3D<float>												& transformedTriangle						= applicationInstance.Box.Positions[iTriangle];
-		::llc::STriangle3D<float>													& transformedNormalVert						= applicationInstance.Box.NormalsVertex[iTriangle];
-		::llc::SCoord3<float>														& transformedNormalTri						= applicationInstance.Box.NormalsTriangle[iTriangle];
+	for(uint32_t iTriangle = 0; iTriangle < geometryBox.Positions.size(); ++iTriangle) {
+		const ::llc::STriangle3D<float>												& transformedTriangle						= geometryBox.Positions			[iTriangle];
+		::llc::STriangle3D<float>													& transformedNormalVert						= geometryBox.NormalsVertex		[iTriangle];
+		::llc::SCoord3<float>														& transformedNormalTri						= geometryBox.NormalsTriangle	[iTriangle];
 
 		transformedNormalVert.A													= (transformedTriangle.B - transformedTriangle.A).Cross(transformedTriangle.C - transformedTriangle.A).Normalize();
 		transformedNormalVert.B													= (transformedTriangle.C - transformedTriangle.B).Cross(transformedTriangle.A - transformedTriangle.B).Normalize();
@@ -112,8 +120,8 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 			+ transformedNormalVert.C	
 			) / 3.0;
 	}
-	::llc::array_view<::llc::SCoord3<float>>										positions									= {(::llc::SCoord3<float>*)applicationInstance.Box.Positions		.begin(), applicationInstance.Box.Positions		.size() * 3};
-	::llc::array_view<::llc::SCoord3<float>>										normals										= {(::llc::SCoord3<float>*)applicationInstance.Box.NormalsVertex	.begin(), applicationInstance.Box.NormalsVertex	.size() * 3};
+	::llc::array_view<::llc::SCoord3<float>>										positions									= {(::llc::SCoord3<float>*)geometryBox.Positions		.begin(), geometryBox.Positions		.size() * 3};
+	::llc::array_view<::llc::SCoord3<float>>										normals										= {(::llc::SCoord3<float>*)geometryBox.NormalsVertex	.begin(), geometryBox.NormalsVertex	.size() * 3};
 
 	for(uint32_t iBlend = 0; iBlend < 30; ++iBlend) 
 	for(uint32_t iPosition = 0; iPosition < positions.size(); ++iPosition) {
@@ -122,14 +130,13 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		//int32_t																			divisor										= 1;
 		for(uint32_t iPosOther = iPosition + 1; iPosOther < positions.size(); ++iPosOther) {
 			const ::llc::SCoord3<float>														& otherPos									= positions	[iPosOther];
-			if((curPos - otherPos).Length() < 1.001) {
+			if((curPos - otherPos).Length() < 0.001) {
 				const ::llc::SCoord3<float>														& otherNormal								= normals	[iPosOther];
 				curNormal																	= ((otherNormal + curNormal) / 2).Normalize();
 				break;
 			}
 		}
 	}
-
 	applicationInstance.Scene.Camera.Points.Position						= {20, 30, 0};
 	return 0;
 }
@@ -189,7 +196,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	lightDir.Normalize();
 
 	//------------------------------------------------ 
-	applicationInstance.BoxPivot.Scale										= {1.f, 1.f, 1.f};
+	applicationInstance.BoxPivot.Scale										= {2.f, 4.f, 2.f};
 	//applicationInstance.BoxPivot.Orientation.y								+= (float)(sinf((float)frameInfo.Seconds.Total / 2) * ::llc::math_pi);
 	//applicationInstance.BoxPivot.Orientation.w								= 1;
 	//applicationInstance.BoxPivot.Orientation.Normalize();

@@ -17,7 +17,7 @@ struct SRenderCache {
 						::llc::array_pod<::llc::STriangle3D<float>>			TransformedNormalsVertex					= {};
 
 						::llc::array_pod<::llc::STriangle3D<float>>			Triangle3dToDraw							= {};
-						::llc::array_pod<int16_t>							Triangle3dIndices							= {};
+						::llc::array_pod<int32_t>							Triangle3dIndices							= {};
 
 						int32_t												TrianglesDrawn								= 0;
 						int32_t												PixelsDrawn									= 0;

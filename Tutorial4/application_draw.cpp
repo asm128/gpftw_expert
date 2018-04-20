@@ -1,7 +1,56 @@
 #include "application.h"
 #include "llc_bitmap_target.h"
 
-					::llc::error_t										drawBoxes									(::SApplication& applicationInstance)											{	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
+					::llc::error_t										drawPixel									
+	( ::SRenderCache															& renderCache
+	, ::llc::SColorBGRA															& targetColorCell
+	, const ::llc::STriangleWeights<double>										& pixelWeights	
+	, const ::llc::STriangle2D<float>											& uvGrid
+	, const ::llc::grid_view<::llc::SColorBGRA>									& textureColors
+	, int32_t																	iTriangle
+	, const ::llc::SCoord3<double>												& lightDir	
+
+	) {	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
+	const ::llc::SColorBGRA														ambientColor								= {0xF, 0xF, 0xF, 0xFF};	//(((::llc::DARKRED * pixelWeights.A) + (::llc::DARKGREEN * pixelWeights.B) + (::llc::DARKBLUE * pixelWeights.C))) * .1;
+	const ::llc::SColorFloat													interpolatedColor							= {1, 1, 1, 1}; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
+	::llc::STriangle3D<float>													weightedNormals								= renderCache.TransformedNormalsVertex[iTriangle]; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
+	weightedNormals.A														*= pixelWeights.A;
+	weightedNormals.B														*= pixelWeights.B;
+	weightedNormals.C														*= pixelWeights.C;
+	const ::llc::SCoord3<double>												interpolatedNormal							= (weightedNormals.A + weightedNormals.B + weightedNormals.C).Cast<double>().Normalize();
+	const ::llc::SColorFloat													finalColor									= interpolatedColor * interpolatedNormal.Dot(lightDir);
+	const ::llc::SCoord2<uint32_t>												textureMetrics								= textureColors.metrics();
+	
+	::llc::SCoord2<double>														uv											= 
+		{ uvGrid.A.x * pixelWeights.A + uvGrid.B.x * pixelWeights.B + uvGrid.C.x * pixelWeights.C
+		, uvGrid.A.y * pixelWeights.A + uvGrid.B.y * pixelWeights.B + uvGrid.C.y * pixelWeights.C
+		};
+	::llc::SColorBGRA															interpolatedBGRA;
+	if( 0 == textureMetrics.x
+	 ||	0 == textureMetrics.y
+	 ) 
+		interpolatedBGRA													= finalColor + ambientColor;
+	else {
+		const ::llc::SCoord2<int32_t>														uvcoords									= 
+			{ (int32_t)((uint32_t)(uv.x * textureMetrics.x) % textureMetrics.x)
+			, (int32_t)((uint32_t)(uv.y * textureMetrics.y) % textureMetrics.y)
+			};
+		const ::llc::SColorBGRA														& srcTexel									= textureColors[uvcoords.y][uvcoords.x];
+		if(srcTexel == ::llc::SColorBGRA{0xFF, 0, 0xFF, 0xFF}) {
+			return 1;
+		}
+		//interpolatedBGRA														= finalColor + ambientColor;
+		interpolatedBGRA														= ::llc::SColorFloat(srcTexel) * finalColor + ambientColor;
+	}
+	if( targetColorCell == interpolatedBGRA ) 
+		return 1;
+
+	targetColorCell															= interpolatedBGRA;
+	return 0;
+}
+
+
+					::llc::error_t										drawGrides									(::SApplication& applicationInstance)											{	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
 	::llc::SFramework															& framework									= applicationInstance.Framework;
 	::llc::SFramework::TOffscreen												& offscreen									= framework.Offscreen;
 	::llc::STexture<uint32_t>													& offscreenDepth							= framework.OffscreenDepthStencil;
@@ -30,15 +79,12 @@
 	renderCache.TrianglesDrawn												= 0;
 	const ::llc::SCoord2<int32_t>												offscreenMetricsI							= offscreenMetrics.Cast<int32_t>();
 	const ::llc::SCoord3<float>													screenCenter								= {offscreenMetricsI.x / 2.0f, offscreenMetricsI.y / 2.0f, };
-	for(uint32_t iBox = 0; iBox < 1; ++iBox) {
-		applicationInstance.BoxPivot.Position.x									= (float)iBox;
-		//applicationInstance.BoxPivot.Scale.z									= iBox / 12.5f + .1f;
-		//applicationInstance.BoxPivot.Scale.y									= 1; //iBox / 10.0f + .1f; //powf(2.0f, (float)iBox / 2) * .0125f;
-		xWorld		.Scale			(applicationInstance.BoxPivot.Scale, true);
-		//xRotation	.SetOrientation	((applicationInstance.BoxPivot.Orientation + ::llc::SQuaternion<float>{0, (float)(iBox / ::llc::math_2pi), 0, 0}).Normalize());
-		xRotation	.SetOrientation	(applicationInstance.BoxPivot.Orientation.Normalize());
+	for(uint32_t iGrid = 0; iGrid < 1; ++iGrid) {
+		xWorld		.Scale			(applicationInstance.GridPivot.Scale, true);
+		//xRotation	.SetOrientation	((applicationInstance.GridPivot.Orientation + ::llc::SQuaternion<float>{0, (float)(iGrid / ::llc::math_2pi), 0, 0}).Normalize());
+		xRotation	.SetOrientation	(applicationInstance.GridPivot.Orientation.Normalize());
 		xWorld																	= xWorld * xRotation;
-		xWorld		.SetTranslation	(applicationInstance.BoxPivot.Position, false);
+		xWorld		.SetTranslation	(applicationInstance.GridPivot.Position, false);
 		::llc::clear
 			( renderCache.Triangle3dWorld
 			, renderCache.Triangle3dToDraw		
@@ -47,8 +93,8 @@
 		const ::llc::SMatrix4<float>												xWV											= xWorld * viewMatrix;
 		//const ::llc::SCoord3<float>													& cameraFront								= applicationInstance.Scene.Camera.Vectors.Front;
 		//const ::llc::SMatrix4<float>												finalTransform								= xWorld * xViewProjection;
-		for(uint32_t iTriangle = 0, triCount = applicationInstance.Box.Positions.size(); iTriangle < triCount; ++iTriangle) {
-			::llc::STriangle3D<float>													triangle3DWorld								= applicationInstance.Box.Positions[iTriangle];
+		for(uint32_t iTriangle = 0, triCount = applicationInstance.Grid.Positions.size(); iTriangle < triCount; ++iTriangle) {
+			::llc::STriangle3D<float>													triangle3DWorld								= applicationInstance.Grid.Positions[iTriangle];
 			::llc::STriangle3D<float>													transformedTriangle3D						= triangle3DWorld;
 			::llc::transform(transformedTriangle3D, xWV);
 			if( transformedTriangle3D.A.z >= fFar
@@ -72,10 +118,8 @@
 			//::llc::translate(transformedTriangle3D, screenCenter);
 			// Check against far and near planes
 			// Check against screen limits
-			if(transformedTriangle3D.A.x < 0 && transformedTriangle3D.B.x < 0 && transformedTriangle3D.C.x < 0) 
-				continue;
-			if(transformedTriangle3D.A.y < 0 && transformedTriangle3D.B.y < 0 && transformedTriangle3D.C.y < 0) 
-				continue;
+			if(transformedTriangle3D.A.x < 0 && transformedTriangle3D.B.x < 0 && transformedTriangle3D.C.x < 0) continue;
+			if(transformedTriangle3D.A.y < 0 && transformedTriangle3D.B.y < 0 && transformedTriangle3D.C.y < 0) continue;
 			if( transformedTriangle3D.A.x >= offscreenMetricsI.x
 			 && transformedTriangle3D.B.x >= offscreenMetricsI.x
 			 && transformedTriangle3D.C.x >= offscreenMetricsI.x
@@ -86,10 +130,10 @@
 			 && transformedTriangle3D.C.y >= offscreenMetricsI.y
 			 )
 				continue;
-			::llc::transform(triangle3DWorld, xWorld);
-			llc_necall(renderCache.Triangle3dIndices	.push_back((int16_t)iTriangle)		, "Out of memory?");
-			llc_necall(renderCache.Triangle3dWorld		.push_back(triangle3DWorld)	, "Out of memory?");
 			llc_necall(renderCache.Triangle3dToDraw		.push_back(transformedTriangle3D)	, "Out of memory?");
+			::llc::transform(triangle3DWorld, xWorld);
+			llc_necall(renderCache.Triangle3dWorld		.push_back(triangle3DWorld)			, "Out of memory?");
+			llc_necall(renderCache.Triangle3dIndices	.push_back(iTriangle)		, "Out of memory?");
 		}
 		llc_necall(::llc::resize(renderCache.Triangle3dIndices.size()
 			, renderCache.TransformedNormalsTriangle
@@ -100,10 +144,10 @@
 		const ::llc::SCoord3<float>													& lightDir									= applicationInstance.LightDirection;
 		for(uint32_t iTriangle = 0, triCount = renderCache.Triangle3dIndices.size(); iTriangle < triCount; ++iTriangle) { // transform normals
 			::llc::SCoord3<float>														& transformedNormalTri						= renderCache.TransformedNormalsTriangle[iTriangle];
-			transformedNormalTri													= xWorld.TransformDirection(applicationInstance.Box.NormalsTriangle[renderCache.Triangle3dIndices[iTriangle]]).Normalize();
+			transformedNormalTri													= xWorld.TransformDirection(applicationInstance.Grid.NormalsTriangle[renderCache.Triangle3dIndices[iTriangle]]).Normalize();
 			const double																lightFactor									= fabs(transformedNormalTri.Dot(lightDir));
 			renderCache.Triangle3dColorList[iTriangle]								= ::llc::LIGHTGRAY * lightFactor;
-			const ::llc::STriangle3D<float>												& vertNormalsTriOrig						= applicationInstance.Box.NormalsVertex[renderCache.Triangle3dIndices[iTriangle]];
+			const ::llc::STriangle3D<float>												& vertNormalsTriOrig						= applicationInstance.Grid.NormalsVertex[renderCache.Triangle3dIndices[iTriangle]];
 			::llc::STriangle3D<float>													& vertNormalsTri							= renderCache.TransformedNormalsVertex[iTriangle];
 			vertNormalsTri.A														= xWorld.TransformDirection(vertNormalsTriOrig.A).Normalize();
 			vertNormalsTri.B														= xWorld.TransformDirection(vertNormalsTriOrig.B).Normalize();
@@ -119,48 +163,15 @@
 			error_if(errored(::llc::drawTriangle(offscreenDepth.View, fFar, fNear, renderCache.Triangle3dToDraw[iTriangle], renderCache.TrianglePixelCoords, renderCache.TrianglePixelWeights)), "Not sure if these functions could ever fail");
 			//if(0 != renderCache.TrianglePixelCoords.size())
 			++renderCache.TrianglesDrawn;
-			const int32_t																iBoxTri										= renderCache.Triangle3dIndices[iTriangle];
-			const ::llc::STriangle2D<float>												& uvBox										= applicationInstance.Box.UVs[iBoxTri];
-			::llc::SColorFloat															bleh										= renderCache.Triangle3dColorList[iTriangle];
+			const int32_t																iGridTri										= renderCache.Triangle3dIndices[iTriangle];
+			const ::llc::STriangle2D<float>												& uvGrid										= applicationInstance.Grid.UVs[iGridTri];
 			for(uint32_t iPixel = 0, pixCount = renderCache.TrianglePixelCoords.size(); iPixel < pixCount; ++iPixel) {
 				const ::llc::SCoord2<int32_t>												& pixelCoord								= renderCache.TrianglePixelCoords	[iPixel];
 				const ::llc::STriangleWeights<double>										& pixelWeights								= renderCache.TrianglePixelWeights	[iPixel];
-				const ::llc::SColorBGRA														ambientColor								= {0xF, 0xF, 0xF, 0xFF};	//(((::llc::DARKRED * pixelWeights.A) + (::llc::DARKGREEN * pixelWeights.B) + (::llc::DARKBLUE * pixelWeights.C))) * .1;
-				const ::llc::SColorFloat													interpolatedColor							= {1, 1, 1, 1}; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
-				::llc::STriangle3D<float>													weightedNormals								= renderCache.TransformedNormalsVertex[iTriangle]; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
-				weightedNormals.A														*= pixelWeights.A;
-				weightedNormals.B														*= pixelWeights.B;
-				weightedNormals.C														*= pixelWeights.C;
-				const ::llc::SCoord3<double>												interpolatedNormal							= (weightedNormals.A + weightedNormals.B + weightedNormals.C).Cast<double>().Normalize();
-				bleh																	= interpolatedColor * interpolatedNormal.Dot(lightDir.Cast<double>());
-				::llc::SCoord2<double>														uv											= 
-					{ uvBox.A.x * pixelWeights.A + uvBox.B.x * pixelWeights.B + uvBox.C.x * pixelWeights.C
-					, uvBox.A.y * pixelWeights.A + uvBox.B.y * pixelWeights.B + uvBox.C.y * pixelWeights.C
-					};
-				::llc::SColorBGRA															interpolatedBGRA;
-				if( 0 == applicationInstance.TextureBox.View.metrics().x
-				 ||	0 == applicationInstance.TextureBox.View.metrics().y
-				 ) 
-					interpolatedBGRA														= bleh + ambientColor;
-				else {
-					::llc::SCoord2<int32_t>														uvcoords									= 
-						{ (int32_t)((uint32_t)(uv.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x)
-						, (int32_t)((uint32_t)(uv.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y)
-						};
-					::llc::SColorBGRA															& srcTexel									= applicationInstance.TextureBox[uvcoords.y][uvcoords.x];
-					if(srcTexel == ::llc::SColorBGRA{0xFF, 0, 0xFF, 0xFF}) {
-						++pixelsSkipped;
-						continue;
-					}
-					interpolatedBGRA														= ::llc::SColorFloat(srcTexel) * bleh + ambientColor;
-				}
-				::llc::SColorBGRA															& targetColorCell							= offscreen.View[pixelCoord.y][pixelCoord.x];
-				if( targetColorCell == interpolatedBGRA ) 
-					++pixelsSkipped;
-				else {
-					targetColorCell															= interpolatedBGRA;
+				if(0 == ::drawPixel(renderCache, offscreen.View[pixelCoord.y][pixelCoord.x], pixelWeights, uvGrid, applicationInstance.TextureGrid.View, iTriangle, lightDir.Cast<double>()))
 					++pixelsDrawn;
-				}
+				else
+					++pixelsSkipped;
 			}
 			//error_if(errored(::llc::drawLine(offscreenMetrics, ::llc::SLine3D<float>{renderCache.Triangle3dToDraw[iTriangle].A, renderCache.Triangle3dToDraw[iTriangle].B}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
 			//error_if(errored(::llc::drawLine(offscreenMetrics, ::llc::SLine3D<float>{renderCache.Triangle3dToDraw[iTriangle].B, renderCache.Triangle3dToDraw[iTriangle].C}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
