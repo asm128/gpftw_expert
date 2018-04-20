@@ -8,6 +8,8 @@
 
 #include "llc_app_impl.h"
 
+#include <process.h>
+
 static constexpr	const uint32_t										ASCII_SCREEN_WIDTH							= 132	;
 static constexpr	const uint32_t										ASCII_SCREEN_HEIGHT							= 50	;
 
@@ -48,13 +50,44 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		error_if(errored(::llc::displayUpdate(applicationInstance.Framework.MainDisplay)), "Not sure why this would fail");
 	}
 	::UnregisterClass(displayDetail.WindowClassName, displayDetail.WindowClass.hInstance);
+	bool																		waiting										= true;
+	for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) 
+		applicationInstance.Threads.States[iThread].RequestedClose				= true;
+	while(waiting) {
+		waiting																	= false;
+		for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) {
+			if(false == applicationInstance.Threads.States[iThread].Closed) {
+				waiting																	= true;
+				break;
+			}
+		}
+	}
+
 	g_ApplicationInstance													= 0;
 	return 0;
 }
 
+					void												myThread									(void* _applicationThreads)														{
+	::SThreadArgs																& threadArgs								= *(::SThreadArgs*)_applicationThreads;
+	::SApplicationThreads														& applicationThreads						= *threadArgs.ApplicationThreads;
+	int32_t																		threadId									= threadArgs.ThreadId;
+	while(false == applicationThreads.States[threadId].RequestedClose) {
+		Sleep(10);
+	}
+	applicationThreads.States[threadId].Closed								= true;
+}
+
+					::llc::error_t										setupThreads								(::SApplication& applicationInstance)											{
+	for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) {
+		applicationInstance.Threads.States	[iThread]							= {true,};									
+		applicationInstance.Threads.Handles	[iThread]							= _beginthread(myThread, 0, &(applicationInstance.ThreadArgs[iThread] = {&applicationInstance.Threads, (int32_t)iThread}));
+	}
+	return 0;
+}
 					::llc::error_t										mainWindowCreate							(::llc::SDisplay& mainWindow, HINSTANCE hInstance);
 					::llc::error_t										setup										(::SApplication& applicationInstance)											{ 
 	g_ApplicationInstance													= &applicationInstance;
+	error_if(errored(setupThreads(applicationInstance)), "Unknown.");
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
 	char																		bmpFileName1	[]							= "gradient_gray.bmp";//"pow_core_0.bmp";
@@ -94,7 +127,6 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		transformedTriangle.A.y													= applicationInstance.TextureBox.View[uint32_t(uv.A.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y][uint32_t(uv.A.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x].b / 255.0f;
 		transformedTriangle.B.y													= applicationInstance.TextureBox.View[uint32_t(uv.B.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y][uint32_t(uv.B.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x].b / 255.0f;
 		transformedTriangle.C.y													= applicationInstance.TextureBox.View[uint32_t(uv.C.y * applicationInstance.TextureBox.View.metrics().y) % applicationInstance.TextureBox.View.metrics().y][uint32_t(uv.C.x * applicationInstance.TextureBox.View.metrics().x) % applicationInstance.TextureBox.View.metrics().x].b / 255.0f;
-
 	}
 	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and textures and this could cause an invalid memory access later on.");
 	applicationInstance.BoxPivot.Orientation								= {0,0,0,1}; 

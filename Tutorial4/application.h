@@ -25,11 +25,33 @@ struct SRenderCache {
 						int32_t												PixelsSkipped								= 0;
 };
 
+struct SApplicationThreadsState { 
+						bool												Running										: 1;
+						bool												Closed										: 1;
+						bool												RequestedClose								: 1;
+};
+
+struct SApplicationThreadsCall {
+						void												* Call										= 0;
+						void												* Arguments									= 0;
+};
+
+struct SApplicationThreads {
+						uintptr_t											Handles	[4]						;
+						SApplicationThreadsState							States	[4]						;
+						::llc::array_pod<SApplicationThreadsCall>			Arguments						;
+};
+
+struct SThreadArgs {
+						::SApplicationThreads								* ApplicationThreads;
+						int32_t												ThreadId;
+};
+
 struct SApplication {
 						::llc::SFramework									Framework									;
 
-						::llc::STexture<::llc::SColorBGRA>					TextureFont									= {};
 						::llc::STexture<::llc::SColorBGRA>					TextureBox									= {};
+						::llc::STexture<::llc::SColorBGRA>					TextureFont									= {};
 						::llc::STextureMonochrome<uint32_t>					TextureFontMonochrome						= {};
 						::llc::SGUI											GUI											= {};
 
@@ -40,6 +62,8 @@ struct SApplication {
 						::llc::SCoord3<float>								LightDirection								= {10, 5, 0};
 						// cabildo 2954
 						::SRenderCache										RenderCache									= {};
+						::SApplicationThreads								Threads										= {};
+						::SThreadArgs										ThreadArgs[4]								= {};
 
 																			SApplication								(::llc::SRuntimeValues& runtimeValues)			noexcept	: Framework(runtimeValues) {}
 };

@@ -40,8 +40,7 @@
 		xWorld																	= xWorld * xRotation;
 		xWorld		.SetTranslation	(applicationInstance.BoxPivot.Position, false);
 		::llc::clear
-			( renderCache.Triangle3dWorld
-			, renderCache.Triangle3dToDraw		
+			( renderCache.Triangle3dToDraw		
 			, renderCache.Triangle3dIndices		
 			);
 		const ::llc::SMatrix4<float>												xWV											= xWorld * viewMatrix;
@@ -88,7 +87,6 @@
 				continue;
 			::llc::transform(triangle3DWorld, xWorld);
 			llc_necall(renderCache.Triangle3dIndices	.push_back((int16_t)iTriangle)		, "Out of memory?");
-			llc_necall(renderCache.Triangle3dWorld		.push_back(triangle3DWorld)	, "Out of memory?");
 			llc_necall(renderCache.Triangle3dToDraw		.push_back(transformedTriangle3D)	, "Out of memory?");
 		}
 		llc_necall(::llc::resize(renderCache.Triangle3dIndices.size()
