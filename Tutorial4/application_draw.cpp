@@ -39,8 +39,8 @@
 		if(srcTexel == ::llc::SColorBGRA{0xFF, 0, 0xFF, 0xFF}) {
 			return 1;
 		}
-		//interpolatedBGRA														= finalColor + ambientColor;
-		interpolatedBGRA														= ::llc::SColorFloat(srcTexel) * finalColor + ambientColor;
+		interpolatedBGRA														= finalColor + ambientColor;
+		//interpolatedBGRA														= ::llc::SColorFloat(srcTexel) * finalColor + ambientColor;
 	}
 	if( targetColorCell == interpolatedBGRA ) 
 		return 1;
