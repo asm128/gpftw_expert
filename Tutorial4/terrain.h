@@ -65,7 +65,7 @@
 				//uint32_t									nTextureStringSize;		// ? is this correct? I guess it does
 				//const char_t**								lstTextureName;			// char[nTextureStringSize]*nTextures
 				::llc::array_obj<::std::string>				TextureNames;
-				uint32_t									LightmapTileCount;
+				//uint32_t									LightmapTileCount;
 				uint32_t									LightmapTiles;		// ?? 
 				uint32_t									LightmapWidth;	
 				uint32_t									LightmapDepth;

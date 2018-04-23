@@ -145,10 +145,10 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	error_if(errored(setupThreads(applicationInstance)), "Unknown.");
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
-	char																		bmpFileName1	[]							= "smiley_height.bmp";//"pow_core_0.bmp";
+	char																		bmpFileName1	[]							= "test.bmp";//"pow_core_0.bmp";
 	char																		bmpFileName2	[]							= "Codepage-437-24.bmp";
-	llc_necall(::bmpOrBmgLoad(bmpFileName1, applicationInstance.TextureGrid), "");
-	llc_necall(::bmpOrBmgLoad(bmpFileName2, applicationInstance.TextureFont), "");
+	error_if(errored(::bmpOrBmgLoad(bmpFileName1, applicationInstance.TextureGrid)), "");
+	error_if(errored(::bmpOrBmgLoad(bmpFileName2, applicationInstance.TextureFont)), "");
 	const ::llc::SCoord2<uint32_t>												& textureFontMetrics						= applicationInstance.TextureFont.View.metrics();
 	applicationInstance.TextureFontMonochrome.resize(textureFontMetrics);
 	for(uint32_t y = 0, yMax = textureFontMetrics.y; y < yMax; ++y)
@@ -162,12 +162,12 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	}
 
 
-	llc_necall(::gndFileLoad(applicationInstance.GNDData, "06guild_r.gnd"), "Error");
+	llc_necall(::gndFileLoad(applicationInstance.GNDData, "prt_fild00.gnd"), "Error");
 
 	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and textures and this could cause an invalid memory access later on.");
 
 	// Load and pretransform our cube geometry.
-	const ::llc::grid_view<::llc::SColorBGRA>									& textureGridView							= applicationInstance.TextureGrid.View;
+	const ::llc::grid_view<::llc::SColorBGRA>									& textureGridView								= applicationInstance.TextureGrid.View;
 	const ::llc::SCoord2<uint32_t>												& textureGridMetrics							= textureGridView.metrics();
 	applicationInstance.TileHeights.resize(textureGridView.metrics());
 	for(uint32_t y = 0, yMax = textureGridMetrics.y; y < yMax; ++y)

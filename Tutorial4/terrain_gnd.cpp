@@ -15,9 +15,9 @@
 	uint32_t														nTextureCount									= 0;
 	uint32_t														nTextureStringSize								= 0;
 	int32_t 
-		byteCount = (int32_t)sizeof(loaded.Metrics	);								memcpy(&loaded.Metrics		, &input[byteOffset], byteCount);					byteOffset += byteCount;
-		byteCount = (int32_t)sizeof(uint32_t		);								memcpy(&nTextureCount		, &input[byteOffset], byteCount);					byteOffset += byteCount;
-		byteCount = (int32_t)sizeof(uint32_t		);								memcpy(&nTextureStringSize	, &input[byteOffset], byteCount);					byteOffset += byteCount;
+		byteCount = (int32_t)sizeof(loaded.Metrics	);	memcpy(&loaded.Metrics		, &input[byteOffset], byteCount);	byteOffset += byteCount;
+		byteCount = (int32_t)sizeof(uint32_t		);	memcpy(&nTextureCount		, &input[byteOffset], byteCount);	byteOffset += byteCount;
+		byteCount = (int32_t)sizeof(uint32_t		);	memcpy(&nTextureStringSize	, &input[byteOffset], byteCount);	byteOffset += byteCount;
 	loaded.TextureNames.resize(nTextureCount);
 	for(uint32_t iTexture = 0; iTexture < nTextureCount; ++iTexture) 
 		loaded.TextureNames[iTexture].resize(nTextureStringSize);
@@ -28,16 +28,13 @@
 		byteOffset													+= byteCount;
 	}
 	uint32_t														tileCountBrightness								= 0; 
-	uint32_t														tileLightmapTiles								= 0;		// ?? 
-	uint32_t														tileLightmapWidth								= 0;	
-	uint32_t														tileLightmapDepth								= 0;
-		byteCount = (int32_t)sizeof(uint32_t);										memcpy(&tileCountBrightness	, &input[byteOffset], byteCount);					byteOffset += byteCount;
-		byteCount = (int32_t)sizeof(uint32_t);										memcpy(&tileLightmapTiles	, &input[byteOffset], byteCount);					byteOffset += byteCount;
-		byteCount = (int32_t)sizeof(uint32_t);										memcpy(&tileLightmapWidth	, &input[byteOffset], byteCount);					byteOffset += byteCount;
-		byteCount = (int32_t)sizeof(uint32_t);										memcpy(&tileLightmapDepth	, &input[byteOffset], byteCount);					byteOffset += byteCount;
+		byteCount = (int32_t)sizeof(uint32_t);			memcpy(&tileCountBrightness	, &input[byteOffset], byteCount);	byteOffset += byteCount;
+		byteCount = (int32_t)sizeof(uint32_t);			memcpy(&loaded.LightmapWidth, &input[byteOffset], byteCount);	byteOffset += byteCount;
+		byteCount = (int32_t)sizeof(uint32_t);			memcpy(&loaded.LightmapDepth, &input[byteOffset], byteCount);	byteOffset += byteCount;
+		byteCount = (int32_t)sizeof(uint32_t);			memcpy(&loaded.LightmapTiles, &input[byteOffset], byteCount);	byteOffset += byteCount;
 	loaded.lstTileBrightnessData.resize(tileCountBrightness);	byteCount = (int32_t)(sizeof(STileBrightnessGND) * tileCountBrightness);	memcpy(loaded.lstTileBrightnessData	.begin(), &input[byteOffset], byteCount);	byteOffset += byteCount; 
 
-	uint32_t														tileCountSkin									= *(uint32_t*)&input[byteOffset]; byteOffset													+= sizeof(uint32_t); 
+	uint32_t														tileCountSkin									= *(uint32_t*)&input[byteOffset]; byteOffset += sizeof(uint32_t); 
 	loaded.lstTileTextureData.resize(tileCountSkin);			byteCount = (int32_t)(sizeof(STileSkinGND) * tileCountSkin);				memcpy(loaded.lstTileTextureData	.begin(), &input[byteOffset], byteCount);	byteOffset += byteCount; 
 
 	uint32_t														tileCountGeometry								= loaded.Metrics.Size.x * loaded.Metrics.Size.x;//*(uint32_t*)&input[byteOffset]; byteOffset													+= sizeof(uint32_t); 
@@ -68,7 +65,7 @@
 			tileGeometry.Flags											= flags		;
 		}
 	}
-	return byteCount;
+	return byteOffset;
 }
 
 			::llc::error_t								gndFileLoad											(SGNDFileContents& loaded, FILE								* input)			{ 
