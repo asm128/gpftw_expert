@@ -93,7 +93,7 @@
 }
 
 
-			::llc::error_t								gndGenerateFaceGeometry								(const SGNDFileContents& loaded, TILE_FACE_FACING facing_direction, SModelNodeGND& generated)	{
+			::llc::error_t								gndGenerateFaceGeometry								(const SGNDFileContents& loaded, TILE_FACE_FACING facing_direction, int32_t textureIndex, SModelNodeGND& generated, ::llc::grid_view<::STileMapping> & out_mapping)	{
 	::llc::grid_view<const ::STileGeometryGND>						geometryView										= {loaded.lstTileGeometryData.begin(), loaded.Metrics.Size};
 	for(uint32_t y = 0; y < geometryView.metrics().y; ++y)
 	for(uint32_t x = 0; x < geometryView.metrics().x; ++x) {
@@ -103,20 +103,40 @@
 			const uint32_t													baseVertexIndex										= generated.Vertices.size();
 			if(-1 == geometryTile.SkinMapping.SkinIndexTop)
 				continue;
+			if(textureIndex != -1 && textureIndex != loaded.lstTileTextureData[geometryTile.SkinMapping.SkinIndexTop].TextureIndex)
+				continue;
 			const ::llc::SCoord3<float>										faceVerts	[4]										= 
-				{ {x + 0.0f, (geometryTile.fHeight[0] / loaded.Metrics.TileScale) * -1, y + 0.0f}
-				, {x + 1.0f, (geometryTile.fHeight[1] / loaded.Metrics.TileScale) * -1, y + 0.0f}
-				, {x + 0.0f, (geometryTile.fHeight[2] / loaded.Metrics.TileScale) * -1, y + 1.0f}
-				, {x + 1.0f, (geometryTile.fHeight[3] / loaded.Metrics.TileScale) * -1, y + 1.0f}
+				{ {x + 0.0f, (geometryTile.fHeight[0] / loaded.Metrics.TileScale), y + 0.0f}
+				, {x + 1.0f, (geometryTile.fHeight[1] / loaded.Metrics.TileScale), y + 0.0f}
+				, {x + 0.0f, (geometryTile.fHeight[2] / loaded.Metrics.TileScale), y + 1.0f}
+				, {x + 1.0f, (geometryTile.fHeight[3] / loaded.Metrics.TileScale), y + 1.0f}
 				};
-			const ::llc::SCoord3<float>										faceNormals	[4]										= 
-				{ (faceVerts[2] - faceVerts[0]).Cross(faceVerts[1] - faceVerts[0]).Normalize()
-				, (faceVerts[0] - faceVerts[1]).Cross(faceVerts[3] - faceVerts[1]).Normalize()
-				, (faceVerts[3] - faceVerts[2]).Cross(faceVerts[0] - faceVerts[2]).Normalize()
-				, (faceVerts[1] - faceVerts[3]).Cross(faceVerts[2] - faceVerts[3]).Normalize()
+			::llc::SCoord3<float>											faceNormals	[4]										= 
+				{ (faceVerts[1] - faceVerts[0]).Cross(faceVerts[2] - faceVerts[0]).Normalize()
+				, (faceVerts[3] - faceVerts[1]).Cross(faceVerts[0] - faceVerts[1]).Normalize()
+				, (faceVerts[0] - faceVerts[2]).Cross(faceVerts[3] - faceVerts[2]).Normalize()
+				, (faceVerts[2] - faceVerts[3]).Cross(faceVerts[1] - faceVerts[3]).Normalize()
 				};
+			::llc::SCoord3<float>											normal												
+				= faceNormals	[0]
+				+ faceNormals	[1]
+				+ faceNormals	[2]
+				+ faceNormals	[3]
+				;
+			(normal /=4).Normalize();
+			faceNormals	[0] = normal;
+			faceNormals	[1] = normal;
+			faceNormals	[2] = normal;
+			faceNormals	[3] = normal;
 			generated.Vertices		.append(faceVerts	);
 			generated.Normals		.append(faceNormals	);
+
+			::STileMapping													& vertexMap											= out_mapping[y][x];
+			vertexMap.VerticesTop[0]									= baseVertexIndex + 0;
+			vertexMap.VerticesTop[1]									= baseVertexIndex + 1;
+			vertexMap.VerticesTop[2]									= baseVertexIndex + 2;
+			vertexMap.VerticesTop[3]									= baseVertexIndex + 3;
+
 			const int32_t													faceSkins	[4]										= 
 				{ geometryTile.SkinMapping.SkinIndexTop
 				, geometryTile.SkinMapping.SkinIndexTop

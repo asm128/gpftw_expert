@@ -5,6 +5,8 @@
 #include "llc_framework.h"
 #include "llc_gui.h"
  
+#include "terrain.h"
+
 #ifndef APPLICATION_H_098273498237423
 #define APPLICATION_H_098273498237423
 
@@ -46,7 +48,7 @@ struct SRenderCache {
 						::llc::array_pod<::llc::SCoord2<int32_t>>				WireframePixelCoords						= {};
 
 						::llc::array_pod<::llc::SColorBGRA>						Triangle3dColorList							= {};
-						::llc::array_pod<::llc::SCoord3<float>>					TransformedNormalsTriangle					= {};
+						//::llc::array_pod<::llc::SCoord3<float>>					TransformedNormalsTriangle					= {};
 						::llc::array_pod<::llc::STriangle3D<float>>				TransformedNormalsVertex					= {};
 
 						::llc::array_pod<int32_t>								Triangle3dIndices							= {};
@@ -96,8 +98,8 @@ struct SApplication {
 
 						::llc::SScene											Scene;
 						::llc::SCoord3<float>									LightDirection								= {10, 5, 0};
-						//::SGNDFileContents										GNDData										= {};
-						//::SModelGND												GNDModel									= {};
+						::SGNDFileContents										GNDData										= {};
+						::SModelGND												GNDModel									= {};
 						// cabildo 2954
 						::SRenderCache											RenderCache									= {};
 						::SApplicationThreads									Threads										= {};
