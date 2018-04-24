@@ -162,91 +162,95 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	}
 
 
-	llc_necall(::gndFileLoad(applicationInstance.GNDData, "prt_fild00.gnd"), "Error");
+	llc_necall(::gndFileLoad(applicationInstance.GNDData, ".\\data\\prt_fild00.gnd"), "Error");
+	SModelNodeGND	modelNode;
+	applicationInstance.GNDModel.Nodes.resize(applicationInstance.GNDData.TextureNames.size() * 3);
+	llc_necall(::gndGenerateFaceGeometry(applicationInstance.GNDData, TILE_FACE_FACING_TOP, applicationInstance.GNDModel.Nodes[0]), "");
+	//llc_necall(applicationInstance.GNDModel.Nodes.push_back(modelNode), "");
 
 	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and textures and this could cause an invalid memory access later on.");
 
-	// Load and pretransform our cube geometry.
-	const ::llc::grid_view<::llc::SColorBGRA>									& textureGridView								= applicationInstance.TextureGrid.View;
-	const ::llc::SCoord2<uint32_t>												& textureGridMetrics							= textureGridView.metrics();
-	applicationInstance.TileHeights.resize(textureGridView.metrics());
-	for(uint32_t y = 0, yMax = textureGridMetrics.y; y < yMax; ++y)
-	for(uint32_t x = 0, xMax = textureGridMetrics.x; x < xMax; ++x) {
-		::STileHeights<float>														& curTile									= applicationInstance.TileHeights[y][x];
-		float																		curHeight									= textureGridView[y][x].g / 255.0f;
-		curTile.Heights[0]														= curHeight;
-		curTile.Heights[1]														= curHeight;
-		curTile.Heights[2]														= curHeight;
-		curTile.Heights[3]														= curHeight;
-	}
-	for(uint32_t y = 0, yMax = (textureGridMetrics.y - 1); y < yMax; ++y)
-	for(uint32_t x = 0, xMax = (textureGridMetrics.x - 1); x < xMax; ++x) {
-		::STileHeights<float>														& curTile									= applicationInstance.TileHeights[y		][x		];
-		::STileHeights<float>														& frontTile									= applicationInstance.TileHeights[y		][x + 1	];
-		::STileHeights<float>														& leftTile									= applicationInstance.TileHeights[y + 1	][x		];
-		::STileHeights<float>														& flTile									= applicationInstance.TileHeights[y + 1	][x + 1	];
-		float																		averageHeight								= 
-			( curTile	.Heights[3]
-			+ frontTile	.Heights[2]
-			+ leftTile	.Heights[1]
-			+ flTile	.Heights[0]
-			) / 4;
-		curTile									.Heights[3]						= averageHeight;
-		frontTile								.Heights[2]						= averageHeight;	
-		leftTile								.Heights[1]						= averageHeight;	
-		flTile									.Heights[0]						= averageHeight;
-	}
-
-	::llc::SModelGeometry<float>												& geometryGrid								= applicationInstance.Grid;
-	::generateModelFromHeights(applicationInstance.TileHeights.View, geometryGrid);
-	//::llc::generateGridGeometry(textureGridMetrics, geometryGrid);
-
-	const ::llc::SCoord3<float>													gridCenter									= {textureGridMetrics.x / 2.0f, 0, textureGridMetrics.y / 2.0f};
-
-	for(uint32_t iTriangle = 0; iTriangle < geometryGrid.Positions.size(); ++iTriangle) {
-		::llc::STriangle3D<float>													& transformedTriangle						= geometryGrid.Positions	[iTriangle];
-		//::llc::STriangle2D<float>													& uv										= geometryGrid.UVs			[iTriangle];
-		transformedTriangle.A													-= gridCenter;
-		transformedTriangle.B													-= gridCenter;
-		transformedTriangle.C													-= gridCenter;
-
-		//transformedTriangle.A.y													= textureGridView[uint32_t(uv.A.y * textureGridMetrics.y) % textureGridMetrics.y][uint32_t(uv.A.x * textureGridMetrics.x) % textureGridMetrics.x].b / 255.0f;
-		//transformedTriangle.B.y													= textureGridView[uint32_t(uv.B.y * textureGridMetrics.y) % textureGridMetrics.y][uint32_t(uv.B.x * textureGridMetrics.x) % textureGridMetrics.x].b / 255.0f;
-		//transformedTriangle.C.y													= textureGridView[uint32_t(uv.C.y * textureGridMetrics.y) % textureGridMetrics.y][uint32_t(uv.C.x * textureGridMetrics.x) % textureGridMetrics.x].b / 255.0f;
-	}
-
-	applicationInstance.GridPivot.Orientation								= {0,0,0,1}; 
-	//for(uint32_t iTriangle = 0; iTriangle < geometryGrid.Positions.size(); ++iTriangle) {
-	//	const ::llc::STriangle3D<float>												& transformedTriangle						= geometryGrid.Positions			[iTriangle];
-	//	::llc::STriangle3D<float>													& transformedNormalVert						= geometryGrid.NormalsVertex		[iTriangle];
-	//	::llc::SCoord3<float>														& transformedNormalTri						= geometryGrid.NormalsTriangle	[iTriangle];
-	//
-	//	transformedNormalVert.A													= (transformedTriangle.B - transformedTriangle.A).Cross(transformedTriangle.C - transformedTriangle.A).Normalize();
-	//	transformedNormalVert.B													= (transformedTriangle.C - transformedTriangle.B).Cross(transformedTriangle.A - transformedTriangle.B).Normalize();
-	//	transformedNormalVert.C													= (transformedTriangle.A - transformedTriangle.C).Cross(transformedTriangle.B - transformedTriangle.C).Normalize();
-	//	transformedNormalTri													= 
-	//		( transformedNormalVert.A	
-	//		+ transformedNormalVert.B	
-	//		+ transformedNormalVert.C	
-	//		) / 3.0;
+	//// Load and pretransform our cube geometry.
+	//const ::llc::grid_view<::llc::SColorBGRA>									& textureGridView								= applicationInstance.TextureGrid.View;
+	//const ::llc::SCoord2<uint32_t>												& textureGridMetrics							= textureGridView.metrics();
+	//applicationInstance.TileHeights.resize(textureGridView.metrics());
+	//for(uint32_t y = 0, yMax = textureGridMetrics.y; y < yMax; ++y)
+	//for(uint32_t x = 0, xMax = textureGridMetrics.x; x < xMax; ++x) {
+	//	::STileHeights<float>														& curTile									= applicationInstance.TileHeights[y][x];
+	//	float																		curHeight									= textureGridView[y][x].g / 255.0f;
+	//	curTile.Heights[0]														= curHeight;
+	//	curTile.Heights[1]														= curHeight;
+	//	curTile.Heights[2]														= curHeight;
+	//	curTile.Heights[3]														= curHeight;
 	//}
-	::llc::array_view<::llc::SCoord3<float>>										positions									= {(::llc::SCoord3<float>*)geometryGrid.Positions		.begin(), geometryGrid.Positions		.size() * 3};
-	::llc::array_view<::llc::SCoord3<float>>										normals										= {(::llc::SCoord3<float>*)geometryGrid.NormalsVertex	.begin(), geometryGrid.NormalsVertex	.size() * 3};
+	//for(uint32_t y = 0, yMax = (textureGridMetrics.y - 1); y < yMax; ++y)
+	//for(uint32_t x = 0, xMax = (textureGridMetrics.x - 1); x < xMax; ++x) {
+	//	::STileHeights<float>														& curTile									= applicationInstance.TileHeights[y		][x		];
+	//	::STileHeights<float>														& frontTile									= applicationInstance.TileHeights[y		][x + 1	];
+	//	::STileHeights<float>														& leftTile									= applicationInstance.TileHeights[y + 1	][x		];
+	//	::STileHeights<float>														& flTile									= applicationInstance.TileHeights[y + 1	][x + 1	];
+	//	float																		averageHeight								= 
+	//		( curTile	.Heights[3]
+	//		+ frontTile	.Heights[2]
+	//		+ leftTile	.Heights[1]
+	//		+ flTile	.Heights[0]
+	//		) / 4;
+	//	curTile									.Heights[3]						= averageHeight;
+	//	frontTile								.Heights[2]						= averageHeight;	
+	//	leftTile								.Heights[1]						= averageHeight;	
+	//	flTile									.Heights[0]						= averageHeight;
+	//}
 	//
-	for(uint32_t iBlend = 0; iBlend < 10; ++iBlend) 
-	for(uint32_t iPosition = 0; iPosition < positions.size(); ++iPosition) {
-		const ::llc::SCoord3<float>														& curPos									= positions	[iPosition];
-		::llc::SCoord3<float>															& curNormal									= normals	[iPosition];
-		//int32_t																			divisor										= 1;
-		for(uint32_t iPosOther = iPosition + 1; iPosOther < positions.size(); ++iPosOther) {
-			const ::llc::SCoord3<float>														& otherPos									= positions	[iPosOther];
-			if((curPos - otherPos).LengthSquared() < (0.001 * .001)) {
-				::llc::SCoord3<float>															& otherNormal								= normals	[iPosOther];
-				otherNormal = curNormal														= ((otherNormal + curNormal) / 2).Normalize();
-				break;
-			}
-		}
-	}
+	//::llc::SModelGeometry<float>												& geometryGrid								= applicationInstance.Grid;
+	//::generateModelFromHeights(applicationInstance.TileHeights.View, geometryGrid);
+	//::llc::generateGridGeometry(textureGridMetrics, geometryGrid);
+	//
+	//const ::llc::SCoord3<float>													gridCenter									= {textureGridMetrics.x / 2.0f, 0, textureGridMetrics.y / 2.0f};
+	//
+	//for(uint32_t iTriangle = 0; iTriangle < geometryGrid.Positions.size(); ++iTriangle) {
+	//	::llc::STriangle3D<float>													& transformedTriangle						= geometryGrid.Positions	[iTriangle];
+	//	//::llc::STriangle2D<float>													& uv										= geometryGrid.UVs			[iTriangle];
+	//	transformedTriangle.A													-= gridCenter;
+	//	transformedTriangle.B													-= gridCenter;
+	//	transformedTriangle.C													-= gridCenter;
+
+	//	//transformedTriangle.A.y													= textureGridView[uint32_t(uv.A.y * textureGridMetrics.y) % textureGridMetrics.y][uint32_t(uv.A.x * textureGridMetrics.x) % textureGridMetrics.x].b / 255.0f;
+	//	//transformedTriangle.B.y													= textureGridView[uint32_t(uv.B.y * textureGridMetrics.y) % textureGridMetrics.y][uint32_t(uv.B.x * textureGridMetrics.x) % textureGridMetrics.x].b / 255.0f;
+	//	//transformedTriangle.C.y													= textureGridView[uint32_t(uv.C.y * textureGridMetrics.y) % textureGridMetrics.y][uint32_t(uv.C.x * textureGridMetrics.x) % textureGridMetrics.x].b / 255.0f;
+	//}
+
+	//applicationInstance.GridPivot.Orientation								= {0,0,0,1}; 
+	////for(uint32_t iTriangle = 0; iTriangle < geometryGrid.Positions.size(); ++iTriangle) {
+	////	const ::llc::STriangle3D<float>												& transformedTriangle						= geometryGrid.Positions			[iTriangle];
+	////	::llc::STriangle3D<float>													& transformedNormalVert						= geometryGrid.NormalsVertex		[iTriangle];
+	////	::llc::SCoord3<float>														& transformedNormalTri						= geometryGrid.NormalsTriangle	[iTriangle];
+	////
+	////	transformedNormalVert.A													= (transformedTriangle.B - transformedTriangle.A).Cross(transformedTriangle.C - transformedTriangle.A).Normalize();
+	////	transformedNormalVert.B													= (transformedTriangle.C - transformedTriangle.B).Cross(transformedTriangle.A - transformedTriangle.B).Normalize();
+	////	transformedNormalVert.C													= (transformedTriangle.A - transformedTriangle.C).Cross(transformedTriangle.B - transformedTriangle.C).Normalize();
+	////	transformedNormalTri													= 
+	////		( transformedNormalVert.A	
+	////		+ transformedNormalVert.B	
+	////		+ transformedNormalVert.C	
+	////		) / 3.0;
+	////}
+	//::llc::array_view<::llc::SCoord3<float>>										positions									= {(::llc::SCoord3<float>*)geometryGrid.Positions		.begin(), geometryGrid.Positions		.size() * 3};
+	//::llc::array_view<::llc::SCoord3<float>>										normals										= {(::llc::SCoord3<float>*)geometryGrid.NormalsVertex	.begin(), geometryGrid.NormalsVertex	.size() * 3};
+	////
+	//for(uint32_t iBlend = 0; iBlend < 10; ++iBlend) 
+	//for(uint32_t iPosition = 0; iPosition < positions.size(); ++iPosition) {
+	//	const ::llc::SCoord3<float>														& curPos									= positions	[iPosition];
+	//	::llc::SCoord3<float>															& curNormal									= normals	[iPosition];
+	//	//int32_t																			divisor										= 1;
+	//	for(uint32_t iPosOther = iPosition + 1; iPosOther < positions.size(); ++iPosOther) {
+	//		const ::llc::SCoord3<float>														& otherPos									= positions	[iPosOther];
+	//		if((curPos - otherPos).LengthSquared() < (0.001 * .001)) {
+	//			::llc::SCoord3<float>															& otherNormal								= normals	[iPosOther];
+	//			otherNormal = curNormal														= ((otherNormal + curNormal) / 2).Normalize();
+	//			break;
+	//		}
+	//	}
+	//}
 
 	applicationInstance.Scene.Camera.Points.Position						= {20, 30, 0};
 	applicationInstance.Scene.Camera.Range.Far								= 1000;
@@ -311,19 +315,21 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	lightDir.Normalize();
 
 	//------------------------------------------------ 
-	applicationInstance.GridPivot.Scale										= {2.f, 4.f, 2.f};
+	//applicationInstance.GridPivot.Scale										= {2.f, 4.f, 2.f};
+	applicationInstance.GridPivot.Scale										= {1, 1, 1};
 	//applicationInstance.GridPivot.Orientation.y								= (float)(sinf((float)(frameInfo.Seconds.Total / 2)) * ::llc::math_2pi);
 	//applicationInstance.GridPivot.Orientation.w								= 1;
 	//applicationInstance.GridPivot.Orientation.Normalize();
-	applicationInstance.GridPivot.Position									= {0, 0, 0};
+	applicationInstance.GridPivot.Position									= {applicationInstance.GNDData.Metrics.Size.x / 2.0f * -1, 0, applicationInstance.GNDData.Metrics.Size.y / 2.0f * -1};
 	return 0;
 }
 
 					::llc::error_t										drawGrides									(::SApplication& applicationInstance);
+					::llc::error_t										drawGND										(::SApplication& applicationInstance);
 
 					::llc::error_t										draw										(::SApplication& applicationInstance)											{	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
-	int32_t 																	pixelsDrawn									= drawGrides(applicationInstance);
-	error_if(errored(pixelsDrawn), "??");
+	//int32_t 																	pixelsDrawn0								= drawGrides(applicationInstance); error_if(errored(pixelsDrawn0), "??");
+	int32_t 																	pixelsDrawn1								= drawGND	(applicationInstance); error_if(errored(pixelsDrawn1), "??");
 	static constexpr const ::llc::SCoord2<int32_t>								sizeCharCell								= {9, 16};
 	uint32_t																	lineOffset									= 0;
 	static constexpr const char													textLine2	[]								= "Press ESC to exit.";

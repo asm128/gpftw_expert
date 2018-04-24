@@ -25,7 +25,7 @@
 	struct STileGeometryGND {
 				float										fHeight[4]						= {0, 0, 0, 0};				// west->east, north->south ordering
 				::STileFaceSkinMapping						SkinMapping;	// <= -1 for none
-				int16_t										Flags							= 0;					// GND v <= 1.5 // maybe a color key? a terrain property? We're going to use it to tell if the triangle is inverted.
+				//int16_t										Flags							= 0;					// GND v <= 1.5 // maybe a color key? a terrain property? We're going to use it to tell if the triangle is inverted.
 	};
 
 	// 0 - No walkable - No Snipable
@@ -61,14 +61,9 @@
 
 	struct SGNDFileContents {
 				STiledTerrainMetricsGND						Metrics;
-				//uint32_t									nTextureCount;
-				//uint32_t									nTextureStringSize;		// ? is this correct? I guess it does
-				//const char_t**								lstTextureName;			// char[nTextureStringSize]*nTextures
 				::llc::array_obj<::std::string>				TextureNames;
-				//uint32_t									LightmapTileCount;
 				uint32_t									LightmapTiles;		// ?? 
-				uint32_t									LightmapWidth;	
-				uint32_t									LightmapDepth;
+				::llc::SCoord2<uint32_t>					LightmapSize;	
 				::llc::array_pod<STileBrightnessGND	>		lstTileBrightnessData;
 				::llc::array_pod<STileSkinGND		>		lstTileTextureData;
 				::llc::array_pod<STileGeometryGND	>		lstTileGeometryData;
@@ -79,6 +74,31 @@
 			::llc::error_t								gndFileLoad						(SGNDFileContents& loaded, FILE								* input);
 			::llc::error_t								gndFileLoad						(SGNDFileContents& loaded, const ::llc::view_const_string	& input);
 
+			struct SModelNodeGND {
+				::llc::array_pod<::llc::SCoord3<float>>				Normals			;
+				::llc::array_pod<::llc::SCoord3<float>>				Vertices		;
+				::llc::array_pod<::llc::SCoord2<float>>				UVs				;
+				::llc::array_pod<::llc::STriangleWeights<uint32_t>>	VertexIndices	; 
+				::llc::array_pod<int32_t>							SkinIndices		; // one per triangle (VertexIndices.size() / 3)
+			};
+
+			struct SModelGND {
+				::llc::array_obj<SModelNodeGND>						Nodes;
+
+//																	SModelGND			()							= default;
+//																	SModelGND			(const SModelGND& other)	= default;
+			};
+
+			enum TILE_FACE_FACING 
+				{ TILE_FACE_FACING_TOP
+				, TILE_FACE_FACING_FRONT
+				, TILE_FACE_FACING_RIGHT
+				, TILE_FACE_FACING_BOTTOM
+				, TILE_FACE_FACING_BACK
+				, TILE_FACE_FACING_LEFT
+				};
+
+			::llc::error_t								gndGenerateFaceGeometry			(const SGNDFileContents& loaded, TILE_FACE_FACING facing_direction, SModelNodeGND& generated);
 #pragma pack(pop)
 
 #endif // TERRAIN_H_289374982374
