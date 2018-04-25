@@ -1,3 +1,5 @@
+#include "llc_gnd.h"
+
 #include "llc_scene.h"	
 #include "llc_camera.h"
 #include "llc_array_static.h"
@@ -5,8 +7,6 @@
 #include "llc_framework.h"
 #include "llc_gui.h"
  
-#include "terrain.h"
-
 #ifndef APPLICATION_H_098273498237423
 #define APPLICATION_H_098273498237423
 
@@ -37,18 +37,12 @@ struct STileHeights {
 				uint32_t									nTotalChunkCount				;	// Stores the total chunks contained in a map
 	};
 
-	//			::llc::array_pod<::llc::SCoord2<float>>		VerticesTop;
-	//			::llc::array_pod<::llc::SCoord2<float>>		VerticesRight;
-	//			::llc::array_pod<::llc::SCoord2<float>>		VerticesFront;
-
-
 struct SRenderCache {
 						::llc::array_pod<::llc::SCoord2<int32_t>>				TrianglePixelCoords							= {};
 						::llc::array_pod<::llc::STriangleWeights<double>>		TrianglePixelWeights						= {};
 						::llc::array_pod<::llc::SCoord2<int32_t>>				WireframePixelCoords						= {};
 
 						::llc::array_pod<::llc::SColorBGRA>						Triangle3dColorList							= {};
-						//::llc::array_pod<::llc::SCoord3<float>>					TransformedNormalsTriangle					= {};
 						::llc::array_pod<::llc::STriangle3D<float>>				TransformedNormalsVertex					= {};
 
 						::llc::array_pod<int32_t>								Triangle3dIndices							= {};
@@ -85,21 +79,19 @@ struct SThreadArgs {
 struct SApplication {
 						::llc::SFramework										Framework									;
 
-						::llc::STexture<::llc::SColorBGRA>						TextureGrid									= {};
 						::llc::array_obj<::llc::STexture<::llc::SColorBGRA>>	TexturesGND									= {};
 						::llc::STexture<::llc::SColorBGRA>						TextureFont									= {};
 						::llc::STextureMonochrome<uint32_t>						TextureFontMonochrome						= {};
 						::llc::SGUI												GUI											= {};
 
-						//::llc::SModelGeometry	<float>							Grid										= {};
 						::llc::SModelPivot		<float>							GridPivot									= {};
 
 						::llc::STexture<::STileHeights<float>>					TileHeights									= {};
 
 						::llc::SScene											Scene;
 						::llc::SCoord3<float>									LightDirection								= {10, 5, 0};
-						::SGNDFileContents										GNDData										= {};
-						::SModelGND												GNDModel									= {};
+						::llc::SGNDFileContents									GNDData										= {};
+						::llc::SModelGND										GNDModel									= {};
 						// cabildo 2954
 						::SRenderCache											RenderCache									= {};
 						::SApplicationThreads									Threads										= {};

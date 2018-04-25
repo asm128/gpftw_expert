@@ -38,8 +38,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tutorial4", "Tutorial4\Tuto
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tutorial5", "Tutorial5\Tutorial5.vcxproj", "{FE1A9DEE-723A-4B43-9E6C-0A77F5AC3637}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6A377F23-CA8F-4E10-8D0A-903471CAAB59} = {6A377F23-CA8F-4E10-8D0A-903471CAAB59}
+		{24DA4934-77CC-497F-B507-F6B9BD6F42CB} = {24DA4934-77CC-497F-B507-F6B9BD6F42CB}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tutorial6", "Tutorial6\Tutorial6.vcxproj", "{1A56556A-DD25-4FDF-8264-B86A2D1EAAD2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6A377F23-CA8F-4E10-8D0A-903471CAAB59} = {6A377F23-CA8F-4E10-8D0A-903471CAAB59}
+		{24DA4934-77CC-497F-B507-F6B9BD6F42CB} = {24DA4934-77CC-497F-B507-F6B9BD6F42CB}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

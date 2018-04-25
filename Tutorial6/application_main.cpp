@@ -7,7 +7,6 @@
 #include "llc_gui_text.h"
 
 #include "llc_app_impl.h"
-#include "terrain.h"
 
 #include <process.h>
 
@@ -99,58 +98,13 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	return 0;
 }
 
-					::llc::error_t										generateModelFromHeights					(const ::llc::grid_view<::STileHeights<float>> & tileHeights, ::llc::SModelGeometry<float> & generated)																											{
-	for(uint32_t y = 0, yMax = tileHeights.metrics().y; y < yMax; ++y)
-	for(uint32_t x = 0, xMax = tileHeights.metrics().x; x < xMax; ++x) {
-		float																		fx											= (float)x;
-		float																		fy											= (float)y;
-		const ::STileHeights<float>													& curTile									= tileHeights[y][x];
-		const ::llc::STriangle3D<float>												tri1										= {{fx, curTile.Heights[0], fy}, {fx, curTile.Heights[2], fy + 1}, {fx + 1, curTile.Heights[3], fy + 1}};
-		const ::llc::STriangle3D<float>												tri2										= {{fx, curTile.Heights[0], fy}, {fx + 1, curTile.Heights[3], fy + 1}, {fx + 1, curTile.Heights[1], fy}};
-		generated.Positions.push_back(tri1);
-		generated.Positions.push_back(tri2);
-		const ::llc::SCoord3<float>													normal1										= (tri1.B - tri1.A).Cross(tri1.C - tri1.A);
-		const ::llc::SCoord3<float>													normal2										= (tri1.B - tri1.A).Cross(tri1.C - tri1.A);
-		//const ::llc::STriangle3D<float>												normals1									= { (tri1.B - tri1.A).Cross(tri1.C - tri1.A), (tri1.C - tri1.B).Cross(tri1.A - tri1.B), (tri1.A - tri1.C).Cross(tri1.B - tri1.C) };
-		//const ::llc::STriangle3D<float>												normals2									= { (tri2.B - tri2.A).Cross(tri2.C - tri2.A), (tri2.C - tri2.B).Cross(tri2.A - tri2.B), (tri2.A - tri2.C).Cross(tri2.B - tri2.C) };
-		//generated.NormalsVertex		.push_back(normals1);
-		//generated.NormalsVertex		.push_back(normals2);
-		generated.NormalsVertex		.push_back({normal1, normal1, normal1});
-		generated.NormalsVertex		.push_back({normal2, normal2, normal2});
-		generated.NormalsTriangle	.push_back(normal1);
-		generated.NormalsTriangle	.push_back(normal2);
-	}
-
-	//for(uint32_t z = 0; z < ((tileHeights.metrics().y - 1) * 2); z += 2) 
-	//for(uint32_t x = 0; x < ((tileHeights.metrics().x - 1) * 2); x += 2) { 
-	//	generated.NormalsVertex[tileHeights.metrics().y * z + x + 0].C = generated.NormalsVertex[tileHeights.metrics().y * z + x + 0].C + generated.NormalsVertex[tileHeights.metrics().y * (z + 1) + x + 0].C ;
-	//	generated.NormalsVertex[tileHeights.metrics().y * z + x + 1].B = generated.NormalsVertex[tileHeights.metrics().y * z + x + 1].B + generated.NormalsVertex[tileHeights.metrics().y * (z + 0) + x + 1].B ;
-	//}
-
-	const ::llc::SCoord2<double>											gridUnit										= {1.0 / tileHeights.metrics().x, 1.0 / tileHeights.metrics().y};
-	const ::llc::SCoord2<double>											gridMetricsF									= tileHeights.metrics().Cast<double>();
-	for(uint32_t z = 0; z < tileHeights.metrics().y; ++z) 
-	for(uint32_t x = 0; x < tileHeights.metrics().x; ++x) { 
-		const ::llc::SCoord2<double>											gridCell										= {x / gridMetricsF.x, z / gridMetricsF.y};
-		const ::llc::SCoord2<double>											gridCellFar										= gridCell + gridUnit;
-		generated.UVs.push_back({{(float)gridCell.x, (float)gridCell.y}, {(float)gridCell.x			, (float)gridCellFar.y}	, gridCellFar.Cast<float>()					}); 
-		generated.UVs.push_back({{(float)gridCell.x, (float)gridCell.y}, gridCellFar.Cast<float>()	, {(float)gridCellFar.x, (float)gridCell.y}	}); 
-	}
-
-	generated;
-	return 0;
-}
-
-
 					::llc::error_t										mainWindowCreate							(::llc::SDisplay& mainWindow, HINSTANCE hInstance);
 					::llc::error_t										setup										(::SApplication& applicationInstance)													{
 	g_ApplicationInstance													= &applicationInstance;
 	error_if(errored(setupThreads(applicationInstance)), "Unknown.");
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
-	char																		bmpFileName1	[]							= "test.bmp";//"pow_core_0.bmp";
 	char																		bmpFileName2	[]							= "Codepage-437-24.bmp";
-	error_if(errored(::bmpOrBmgLoad(bmpFileName1, applicationInstance.TextureGrid)), "");
 	error_if(errored(::bmpOrBmgLoad(bmpFileName2, applicationInstance.TextureFont)), "");
 	const ::llc::SCoord2<uint32_t>												& textureFontMetrics						= applicationInstance.TextureFont.View.metrics();
 	applicationInstance.TextureFontMonochrome.resize(textureFontMetrics);
@@ -165,55 +119,56 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	}
 
 
-	llc_necall(::gndFileLoad(applicationInstance.GNDData, ".\\data\\prt_fild00.gnd"), "Error");
-	SModelNodeGND																modelNode;
+	llc_necall(::llc::gndFileLoad(applicationInstance.GNDData, ".\\data_2006\\data\\prt_fild00.gnd"), "Error");
+	::llc::SModelNodeGND														modelNode;
 	applicationInstance.TexturesGND.resize(applicationInstance.GNDData.TextureNames.size());
 	for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++ iTex) {
-		static constexpr	const char												respath			[]							= ".\\data\\texture";
+		//static constexpr	const char												respath			[]							= ".\\data\\texture";
+		static constexpr	const char												respath			[]							= ".\\data_2006\\data\\texture";
 		char																		filepathinal	[512]						= {};
 		sprintf_s(filepathinal, "%s\\%s", respath, applicationInstance.GNDData.TextureNames[iTex].c_str());
 		error_if(errored(::llc::bmpFileLoad((::llc::view_const_string)filepathinal, applicationInstance.TexturesGND[iTex])), "Not found? %s.", filepathinal);
 	}
 	applicationInstance.GNDModel.Nodes.resize(applicationInstance.GNDData.TextureNames.size() * 3);
 	applicationInstance.GNDModel.TileMapping.resize(applicationInstance.GNDData.Metrics.Size);
-	::llc::grid_view<::STileGeometryGND>											tileGeometryView							= {applicationInstance.GNDData.lstTileGeometryData.begin(), applicationInstance.GNDData.Metrics.Size};
+	::llc::grid_view<::llc::STileGeometryGND>									tileGeometryView							= {applicationInstance.GNDData.lstTileGeometryData.begin(), applicationInstance.GNDData.Metrics.Size};
 	for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++iTex) {
-		::SModelNodeGND																	& gndNode									= applicationInstance.GNDModel.Nodes[iTex];
-		llc_necall(::gndGenerateFaceGeometry(applicationInstance.GNDData, TILE_FACE_FACING_TOP, iTex, gndNode, applicationInstance.GNDModel.TileMapping.View), "");
+		::llc::SModelNodeGND														& gndNode									= applicationInstance.GNDModel.Nodes[iTex];
+		llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, llc::TILE_FACE_FACING_TOP, iTex, gndNode, applicationInstance.GNDModel.TileMapping.View), "");
 	}
 	// Blend normals.
 	for(uint32_t y = 0; y < applicationInstance.GNDData.Metrics.Size.y - 1; ++y)
 	for(uint32_t x = 0; x < applicationInstance.GNDData.Metrics.Size.x - 1; ++x) {
-		const ::STileGeometryGND														& tileGeometry0								= tileGeometryView[y][x];
-		const ::STileGeometryGND														& tileGeometry1								= tileGeometryView[y][x + 1];
-		const ::STileGeometryGND														& tileGeometry2								= tileGeometryView[y + 1][x];
-		const ::STileGeometryGND														& tileGeometry3								= tileGeometryView[y + 1][x + 1];
+		const ::llc::STileGeometryGND												& tileGeometry0								= tileGeometryView[y][x];
+		const ::llc::STileGeometryGND												& tileGeometry1								= tileGeometryView[y][x + 1];
+		const ::llc::STileGeometryGND												& tileGeometry2								= tileGeometryView[y + 1][x];
+		const ::llc::STileGeometryGND												& tileGeometry3								= tileGeometryView[y + 1][x + 1];
 
-		const ::STileMapping															& tileMapping0								= applicationInstance.GNDModel.TileMapping.View[y + 0][x + 0];
-		const ::STileMapping															& tileMapping1								= applicationInstance.GNDModel.TileMapping.View[y + 0][x + 1];
-		const ::STileMapping															& tileMapping2								= applicationInstance.GNDModel.TileMapping.View[y + 1][x + 0];
-		const ::STileMapping															& tileMapping3								= applicationInstance.GNDModel.TileMapping.View[y + 1][x + 1];
+		const ::llc::STileMapping													& tileMapping0								= applicationInstance.GNDModel.TileMapping.View[y + 0][x + 0];
+		const ::llc::STileMapping													& tileMapping1								= applicationInstance.GNDModel.TileMapping.View[y + 0][x + 1];
+		const ::llc::STileMapping													& tileMapping2								= applicationInstance.GNDModel.TileMapping.View[y + 1][x + 0];
+		const ::llc::STileMapping													& tileMapping3								= applicationInstance.GNDModel.TileMapping.View[y + 1][x + 1];
 
-		const bool																		processTile0								= (tileGeometry0.SkinMapping.SkinIndexTop != -1);// && (applicationInstance.GNDData.lstTileTextureData[tileGeometry0.SkinMapping.SkinIndexTop].TextureIndex != -1);
-		const bool																		processTile1								= (tileGeometry1.SkinMapping.SkinIndexTop != -1);// && (applicationInstance.GNDData.lstTileTextureData[tileGeometry1.SkinMapping.SkinIndexTop].TextureIndex != -1);
-		const bool																		processTile2								= (tileGeometry2.SkinMapping.SkinIndexTop != -1);// && (applicationInstance.GNDData.lstTileTextureData[tileGeometry2.SkinMapping.SkinIndexTop].TextureIndex != -1);
-		const bool																		processTile3								= (tileGeometry3.SkinMapping.SkinIndexTop != -1);// && (applicationInstance.GNDData.lstTileTextureData[tileGeometry3.SkinMapping.SkinIndexTop].TextureIndex != -1);
-		const int32_t																	texIndex0									= processTile0 ? applicationInstance.GNDData.lstTileTextureData[tileGeometry0.SkinMapping.SkinIndexTop].TextureIndex : -1;
-		const int32_t																	texIndex1									= processTile1 ? applicationInstance.GNDData.lstTileTextureData[tileGeometry1.SkinMapping.SkinIndexTop].TextureIndex : -1;
-		const int32_t																	texIndex2									= processTile2 ? applicationInstance.GNDData.lstTileTextureData[tileGeometry2.SkinMapping.SkinIndexTop].TextureIndex : -1;
-		const int32_t																	texIndex3									= processTile3 ? applicationInstance.GNDData.lstTileTextureData[tileGeometry3.SkinMapping.SkinIndexTop].TextureIndex : -1;
-		::llc::SCoord3<float>															normal										= {};
-		uint32_t																		divisor										= 0;
-		if(processTile0) { ++divisor; ::SModelNodeGND	& gndNode0		= applicationInstance.GNDModel.Nodes[texIndex0]; normal += gndNode0.Normals[tileMapping0.VerticesTop[3]]; }
-		if(processTile1) { ++divisor; ::SModelNodeGND	& gndNode1		= applicationInstance.GNDModel.Nodes[texIndex1]; normal += gndNode1.Normals[tileMapping1.VerticesTop[2]]; }
-		if(processTile2) { ++divisor; ::SModelNodeGND	& gndNode2		= applicationInstance.GNDModel.Nodes[texIndex2]; normal += gndNode2.Normals[tileMapping2.VerticesTop[1]]; }
-		if(processTile3) { ++divisor; ::SModelNodeGND	& gndNode3		= applicationInstance.GNDModel.Nodes[texIndex3]; normal += gndNode3.Normals[tileMapping3.VerticesTop[0]]; }
+		const bool																	processTile0								= (tileGeometry0.SkinMapping.SkinIndexTop != -1);// && (applicationInstance.GNDData.lstTileTextureData[tileGeometry0.SkinMapping.SkinIndexTop].TextureIndex != -1);
+		const bool																	processTile1								= (tileGeometry1.SkinMapping.SkinIndexTop != -1);// && (applicationInstance.GNDData.lstTileTextureData[tileGeometry1.SkinMapping.SkinIndexTop].TextureIndex != -1);
+		const bool																	processTile2								= (tileGeometry2.SkinMapping.SkinIndexTop != -1);// && (applicationInstance.GNDData.lstTileTextureData[tileGeometry2.SkinMapping.SkinIndexTop].TextureIndex != -1);
+		const bool																	processTile3								= (tileGeometry3.SkinMapping.SkinIndexTop != -1);// && (applicationInstance.GNDData.lstTileTextureData[tileGeometry3.SkinMapping.SkinIndexTop].TextureIndex != -1);
+		const int32_t																texIndex0									= processTile0 ? applicationInstance.GNDData.lstTileTextureData[tileGeometry0.SkinMapping.SkinIndexTop].TextureIndex : -1;
+		const int32_t																texIndex1									= processTile1 ? applicationInstance.GNDData.lstTileTextureData[tileGeometry1.SkinMapping.SkinIndexTop].TextureIndex : -1;
+		const int32_t																texIndex2									= processTile2 ? applicationInstance.GNDData.lstTileTextureData[tileGeometry2.SkinMapping.SkinIndexTop].TextureIndex : -1;
+		const int32_t																texIndex3									= processTile3 ? applicationInstance.GNDData.lstTileTextureData[tileGeometry3.SkinMapping.SkinIndexTop].TextureIndex : -1;
+		::llc::SCoord3<float>														normal										= {};
+		uint32_t																	divisor										= 0;
+		if(processTile0) { ++divisor; ::llc::SModelNodeGND & gndNode0 = applicationInstance.GNDModel.Nodes[texIndex0]; normal += gndNode0.Normals[tileMapping0.VerticesTop[3]]; }
+		if(processTile1) { ++divisor; ::llc::SModelNodeGND & gndNode1 = applicationInstance.GNDModel.Nodes[texIndex1]; normal += gndNode1.Normals[tileMapping1.VerticesTop[2]]; }
+		if(processTile2) { ++divisor; ::llc::SModelNodeGND & gndNode2 = applicationInstance.GNDModel.Nodes[texIndex2]; normal += gndNode2.Normals[tileMapping2.VerticesTop[1]]; }
+		if(processTile3) { ++divisor; ::llc::SModelNodeGND & gndNode3 = applicationInstance.GNDModel.Nodes[texIndex3]; normal += gndNode3.Normals[tileMapping3.VerticesTop[0]]; }
 		if(divisor) {
 			(normal /= divisor).Normalize();
-			if(processTile0) { ::SModelNodeGND				& gndNode0		= applicationInstance.GNDModel.Nodes[texIndex0]; gndNode0.Normals[tileMapping0.VerticesTop[3]] = normal; }
-			if(processTile1) { ::SModelNodeGND				& gndNode1		= applicationInstance.GNDModel.Nodes[texIndex1]; gndNode1.Normals[tileMapping1.VerticesTop[2]] = normal; }
-			if(processTile2) { ::SModelNodeGND				& gndNode2		= applicationInstance.GNDModel.Nodes[texIndex2]; gndNode2.Normals[tileMapping2.VerticesTop[1]] = normal; }
-			if(processTile3) { ::SModelNodeGND				& gndNode3		= applicationInstance.GNDModel.Nodes[texIndex3]; gndNode3.Normals[tileMapping3.VerticesTop[0]] = normal; }
+			if(processTile0) { ::llc::SModelNodeGND	& gndNode0 = applicationInstance.GNDModel.Nodes[texIndex0]; gndNode0.Normals[tileMapping0.VerticesTop[3]] = normal; }
+			if(processTile1) { ::llc::SModelNodeGND	& gndNode1 = applicationInstance.GNDModel.Nodes[texIndex1]; gndNode1.Normals[tileMapping1.VerticesTop[2]] = normal; }
+			if(processTile2) { ::llc::SModelNodeGND	& gndNode2 = applicationInstance.GNDModel.Nodes[texIndex2]; gndNode2.Normals[tileMapping2.VerticesTop[1]] = normal; }
+			if(processTile3) { ::llc::SModelNodeGND	& gndNode3 = applicationInstance.GNDModel.Nodes[texIndex3]; gndNode3.Normals[tileMapping3.VerticesTop[0]] = normal; }
 		}
 	}
 

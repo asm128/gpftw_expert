@@ -178,11 +178,9 @@
     <ClCompile Include="application_draw.cpp" />
     <ClCompile Include="application_main.cpp" />
     <ClCompile Include="application_setup.cpp" />
-    <ClCompile Include="terrain_gnd.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
-    <ClInclude Include="terrain.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
