@@ -120,26 +120,24 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			;
 	}
 
-	static constexpr const char		ragnaPath	[]				= ".\\data_2005\\";
-	char							temp		[512]			= {};
 	::llc::SRSMFileContents			rsmData;
+	static constexpr const char		ragnaPath	[]				= "..\\data_2017\\data\\";
+	char							temp		[512]			= {};
+	sprintf_s(temp, "%s%s%s", ragnaPath, "model\\", "니플헤임\\니플헤임-도구점.rsm");	llc_necall(::llc::rsmFileLoad(rsmData						, ::llc::view_const_string(temp)), "Error");	// Test loading an RSM model
+
 	::llc::SRSWFileContents			rswData;
-	sprintf_s(temp, "%s%s%s", ragnaPath, "data\\", "prontera.rsw");				llc_necall(::llc::rswFileLoad(rswData, ::llc::view_const_string(temp)), "Error");
-	sprintf_s(temp, "%s%s%s", ragnaPath, "data\\", &rswData.GNDFilename[0]);	llc_necall(::llc::gndFileLoad(applicationInstance.GNDData, ::llc::view_const_string(temp)), "Error");
-	//sprintf_s(temp, "%s%s%s", ragnaPath, "data\\", );	llc_necall(::llc::rsmFileLoad(rsmData, ".\\data_2005\\data\\model\\니플헤임\\니플헤임-도구점.rsm"), "Error");
-	for(uint32_t iRSM = 0; iRSM < (uint32_t)rswData.RSWFilenames.size(); ++iRSM){
-		sprintf_s(temp, "%s%s%s", ragnaPath, "data\\model\\", &rswData.RSWFilenames[0][0]);	
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", "niflheim.rsw");							llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", &rswData.GNDFilename[0]);					llc_necall(::llc::gndFileLoad(applicationInstance.GNDData	, ::llc::view_const_string(temp)), "Error");
+	for(uint32_t iRSM = 0; iRSM < (uint32_t)rswData.RSWModels.size(); ++iRSM){
+		sprintf_s(temp, "%s%s%s", ragnaPath, "model\\", &rswData.RSWModels[iRSM].Filename[0]);	
 		error_if(errored(::llc::rsmFileLoad(rsmData, ::llc::view_const_string(temp))), "Failed to load file: %s.", temp);
 	}
 
 	::llc::SModelNodeGND														modelNode;
 	applicationInstance.TexturesGND.resize(applicationInstance.GNDData.TextureNames.size());
 	for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++ iTex) {
-		//static constexpr	const char												respath			[]							= ".\\data\\texture";
-		static constexpr	const char												respath			[]							= ".\\data_2005\\data\\texture";
-		char																		filepathinal	[512]						= {};
-		sprintf_s(filepathinal, "%s\\%s", respath, applicationInstance.GNDData.TextureNames[iTex].c_str());
-		error_if(errored(::llc::bmpFileLoad((::llc::view_const_string)filepathinal, applicationInstance.TexturesGND[iTex])), "Not found? %s.", filepathinal);
+		sprintf_s(temp, "%s%s%s", ragnaPath, "texture\\", &applicationInstance.GNDData.TextureNames[iTex][0]);	
+		error_if(errored(::llc::bmpFileLoad(::llc::view_const_string(temp), applicationInstance.TexturesGND[iTex])), "Not found? %s.", temp);
 	}
 	applicationInstance.GNDModel.Nodes.resize(applicationInstance.GNDData.TextureNames.size() * 6);
 	applicationInstance.GNDModel.TileMapping.resize(applicationInstance.GNDData.Metrics.Size);
