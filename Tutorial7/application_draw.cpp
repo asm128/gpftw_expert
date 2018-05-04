@@ -39,15 +39,12 @@
 	::llc::SColorBGRA															interpolatedBGRA;
 	if( 0 == textureMetrics.x
 	 ||	0 == textureMetrics.y
-	 ||	0 != textureMetrics.y
+	 //||	0 != textureMetrics.y
 	 ) {
 		for(uint32_t iLight = 0; iLight < lights.size(); ++iLight) {
 			const ::llc::SLightInfoRSW												& rswLight									= lights[iLight];
-			::llc::SCoord3<double>													actualPos									= rswLight.Position.Cast<double>() / 10 + ::llc::SCoord3<double>{90, 0, -95};
-			actualPos.y															*= -1;
-			actualPos.z															*= -1;
-			::llc::SCoord3<float>													rswColor									= rswLight.Color * (1.0 - (actualPos - interpolatedPosition).Length() / 5.0);
-			lightColor															+= ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f);
+			::llc::SCoord3<float>													rswColor									= rswLight.Color * (1.0 - (rswLight.Position.Cast<double>() - interpolatedPosition).Length() / 10.0);
+			lightColor															+= ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f) / 2.0;
 		}
 		interpolatedBGRA													= directionalColor + lightColor + ambientColor;
 		//interpolatedBGRA													= lightColor;
@@ -58,16 +55,16 @@
 			, (int32_t)((uint32_t)(uv.y * textureMetrics.y) % textureMetrics.y)
 			};
 		const ::llc::SColorFloat													& srcTexel									= textureColors[uvcoords.y][uvcoords.x];
-		//if(srcTexel == ::llc::SColorBGRA{0xFF, 0, 0xFF, 0xFF}) 
-		//	return 1;
+		if(srcTexel == ::llc::SColorBGRA{0xFF, 0, 0xFF, 0xFF}) 
+			return 1;
 		//interpolatedBGRA														= finalColor + ambientColor;
-		for(uint32_t iLight = 0; iLight < lights.size(); ++iLight) {
-			const ::llc::SLightInfoRSW												& rswLight									= lights[iLight];
-			::llc::SCoord3<double>													actualPos									= rswLight.Position.Cast<double>() / 10 + ::llc::SCoord3<double>{90, 0, -95};
-			actualPos.y															*= -1;
-			actualPos.z															*= -1;
-			::llc::SCoord3<float>													rswColor									= rswLight.Color * (1.0 - (actualPos - interpolatedPosition).Length() / 5.0);
-			lightColor															+= srcTexel * ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f);
+		for(uint32_t iLight = 0, lightCount = lights.size(); iLight < lightCount; ++iLight) {
+			const ::llc::SLightInfoRSW												& rswLight									= lights[rand() % lights.size()];
+			double																	distFactor									= (1.0 - (rswLight.Position.Cast<double>() - interpolatedPosition).Length() / 10.0);
+			if(distFactor > 0) {
+				::llc::SCoord3<float>													rswColor									= rswLight.Color * distFactor;
+				lightColor															+= srcTexel * ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f) / 2.0;
+			}
 		}
 		interpolatedBGRA													= srcTexel * directionalColor + lightColor + srcTexel * ambientColor;
 		//interpolatedBGRA														= srcTexel * lightColor + srcTexel * ambientColor;

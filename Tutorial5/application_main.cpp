@@ -130,7 +130,11 @@ static				::llc::error_t										bmpOrBmgLoad								(::llc::view_string bmpFil
 	::llc::grid_view<::llc::STileGeometryGND>											tileGeometryView							= {applicationInstance.GNDData.lstTileGeometryData.begin(), applicationInstance.GNDData.Metrics.Size};
 	for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++iTex) {
 		::llc::SModelNodeGND																& gndNode									= applicationInstance.GNDModel.Nodes[iTex];
-		llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, llc::TILE_FACE_FACING_TOP, iTex, gndNode, applicationInstance.GNDModel.TileMapping.View), "");
+		llc_necall(::llc::gndGenerateFaceGeometry
+			( applicationInstance.GNDData.lstTileTextureData
+			, applicationInstance.GNDData.lstTileGeometryData
+			, applicationInstance.GNDData.Metrics
+			, llc::TILE_FACE_FACING_TOP, iTex, gndNode, applicationInstance.GNDModel.TileMapping.View), "");
 	}
 	// Blend normals.
 	for(uint32_t y = 0; y < applicationInstance.GNDData.Metrics.Size.y - 1; ++y)
