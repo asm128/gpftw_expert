@@ -1,4 +1,6 @@
+#include "llc_ro_rsw.h"
 #include "llc_ro_gnd.h"
+#include "llc_ro_rsm.h"
 
 #include "llc_scene.h"	
 #include "llc_camera.h"
@@ -82,7 +84,13 @@ struct SApplication {
 						::llc::SScene											Scene;
 						::llc::SCoord3<float>									LightDirection								= {10, 5, 0};
 						::llc::SGNDFileContents									GNDData										= {};
+						::llc::SRSWFileContents									RSWData										= {};
+						::llc::array_obj<::llc::SRSMFileContents>				RSMData										= {};
+
 						::llc::SModelGND										GNDModel									= {};
+						//::llc::array_obj<::llc::SModelRSM>					RSMModel									= {};
+
+
 						// cabildo 2954
 						::SRenderCache											RenderCache									= {};
 						::SApplicationThreads									Threads										= {};

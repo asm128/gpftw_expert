@@ -120,15 +120,14 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			;
 	}
 
-	::llc::SRSMFileContents			rsmData;
-	static constexpr const char		ragnaPath	[]				= "..\\data_2017\\data\\";
-	char							temp		[512]			= {};
-	sprintf_s(temp, "%s%s%s", ragnaPath, "model\\", "니플헤임\\니플헤임-도구점.rsm");	llc_necall(::llc::rsmFileLoad(rsmData						, ::llc::view_const_string(temp)), "Error");	// Test loading an RSM model
-
-	::llc::SRSWFileContents			rswData;
-	sprintf_s(temp, "%s%s%s", ragnaPath, "", "niflheim.rsw");							llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
+	static constexpr const char													ragnaPath	[]								= "..\\data_2006\\data\\";
+	char																		temp		[512]							= {};
+	::llc::SRSWFileContents														& rswData									= applicationInstance.RSWData;
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", "comodo.rsw");							llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
 	sprintf_s(temp, "%s%s%s", ragnaPath, "", &rswData.GNDFilename[0]);					llc_necall(::llc::gndFileLoad(applicationInstance.GNDData	, ::llc::view_const_string(temp)), "Error");
+	applicationInstance.RSMData.resize(rswData.RSWModels.size());
 	for(uint32_t iRSM = 0; iRSM < (uint32_t)rswData.RSWModels.size(); ++iRSM){
+		::llc::SRSMFileContents														& rsmData									= applicationInstance.RSMData[iRSM];
 		sprintf_s(temp, "%s%s%s", ragnaPath, "model\\", &rswData.RSWModels[iRSM].Filename[0]);	
 		error_if(errored(::llc::rsmFileLoad(rsmData, ::llc::view_const_string(temp))), "Failed to load file: %s.", temp);
 	}
@@ -139,16 +138,17 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 		sprintf_s(temp, "%s%s%s", ragnaPath, "texture\\", &applicationInstance.GNDData.TextureNames[iTex][0]);	
 		error_if(errored(::llc::bmpFileLoad(::llc::view_const_string(temp), applicationInstance.TexturesGND[iTex])), "Not found? %s.", temp);
 	}
+
 	applicationInstance.GNDModel.Nodes.resize(applicationInstance.GNDData.TextureNames.size() * 6);
 	applicationInstance.GNDModel.TileMapping.resize(applicationInstance.GNDData.Metrics.Size);
 	::llc::grid_view<::llc::STileGeometryGND>									tileGeometryView							= {applicationInstance.GNDData.lstTileGeometryData.begin(), applicationInstance.GNDData.Metrics.Size};
 	for(uint32_t iTex = 0, texCount = applicationInstance.GNDData.TextureNames.size(); iTex < texCount; ++iTex) {
 		int32_t indexTop	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_TOP		; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_TOP	, iTex, applicationInstance.GNDModel.Nodes[indexTop		], applicationInstance.GNDModel.TileMapping.View), "");
-		int32_t indexFront	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_FRONT	; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_FRONT	, iTex, applicationInstance.GNDModel.Nodes[indexFront		], applicationInstance.GNDModel.TileMapping.View), "");
-		int32_t indexRight	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_RIGHT	; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_RIGHT	, iTex, applicationInstance.GNDModel.Nodes[indexRight		], applicationInstance.GNDModel.TileMapping.View), "");
+		int32_t indexFront	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_FRONT	; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_FRONT	, iTex, applicationInstance.GNDModel.Nodes[indexFront	], applicationInstance.GNDModel.TileMapping.View), "");
+		int32_t indexRight	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_RIGHT	; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_RIGHT	, iTex, applicationInstance.GNDModel.Nodes[indexRight	], applicationInstance.GNDModel.TileMapping.View), "");
 		int32_t indexBottom	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_BOTTOM	; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_BOTTOM	, iTex, applicationInstance.GNDModel.Nodes[indexBottom	], applicationInstance.GNDModel.TileMapping.View), "");
-		int32_t indexBack	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_BACK		; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_BACK	, iTex, applicationInstance.GNDModel.Nodes[indexBack		], applicationInstance.GNDModel.TileMapping.View), "");
-		int32_t indexLeft	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_LEFT		; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_LEFT	, iTex, applicationInstance.GNDModel.Nodes[indexLeft		], applicationInstance.GNDModel.TileMapping.View), "");
+		int32_t indexBack	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_BACK		; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_BACK	, iTex, applicationInstance.GNDModel.Nodes[indexBack	], applicationInstance.GNDModel.TileMapping.View), "");
+		int32_t indexLeft	= iTex + applicationInstance.GNDData.TextureNames.size() * ::llc::TILE_FACE_FACING_LEFT		; llc_necall(::llc::gndGenerateFaceGeometry(applicationInstance.GNDData, ::llc::TILE_FACE_FACING_LEFT	, iTex, applicationInstance.GNDModel.Nodes[indexLeft	], applicationInstance.GNDModel.TileMapping.View), "");
 	}
 	// Blend normals.
 	for(uint32_t y = 0; y < applicationInstance.GNDData.Metrics.Size.y - 1; ++y)

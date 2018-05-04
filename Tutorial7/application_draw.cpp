@@ -1,36 +1,57 @@
 #include "application.h"
 #include "llc_bitmap_target.h"
+#include "llc_ro_rsw.h"
 
 					::llc::error_t										drawPixelGND									
 	( ::SRenderCache															& renderCache
 	, ::llc::SColorBGRA															& targetColorCell
 	, const ::llc::STriangleWeights<double>										& pixelWeights	
+	, const ::llc::STriangle3D<float>											& positions
 	, const ::llc::STriangle2D<float>											& uvs
 	, const ::llc::grid_view<::llc::SColorBGRA>									& textureColors
 	, int32_t																	iTriangle
-	, const ::llc::SCoord3<double>												& lightDir	
-
+	, const ::llc::SCoord3<double>												& lightDir
+	, const ::llc::SColorFloat													& diffuseColor								
+	, const ::llc::SColorFloat													& ambientColor								
+	, const ::llc::array_view<::llc::SLightInfoRSW>								& lights
 	) {	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
-	::llc::STriangle3D<float>													weightedNormals								= renderCache.TransformedNormalsVertex[iTriangle]; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
-	weightedNormals.A														*= pixelWeights.A;
-	weightedNormals.B														*= pixelWeights.B;
-	weightedNormals.C														*= pixelWeights.C;
-	const ::llc::SCoord3<double>												interpolatedNormal							= (weightedNormals.A + weightedNormals.B + weightedNormals.C).Cast<double>().Normalize();
-	//const ::llc::SCoord3<double>												interpolatedNormal							= weightedNormals.B.Cast<double>().Normalize();//(weightedNormals.A + weightedNormals.B + weightedNormals.C).Cast<double>().Normalize();
-	const ::llc::SColorFloat													ambientColor								= {.2f, .2f, .2f, .2f};	//(((::llc::DARKRED * pixelWeights.A) + (::llc::DARKGREEN * pixelWeights.B) + (::llc::DARKBLUE * pixelWeights.C))) * .1;
-	::llc::SColorFloat															diffuseColor								= {1, 1, 1, 1}; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
-	diffuseColor															= diffuseColor * interpolatedNormal.Dot(lightDir);
+	::llc::SColorFloat															lightColor									= {0, 0, 0, 1}; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
+	const ::llc::STriangle3D<float>												& normals									= renderCache.TransformedNormalsVertex[iTriangle];
+	::llc::STriangle3D<double>													weightedNormals								= 
+		{ normals.A.Cast<double>() * pixelWeights.A
+		, normals.B.Cast<double>() * pixelWeights.B
+		, normals.C.Cast<double>() * pixelWeights.C
+		};
+	const ::llc::SCoord3<double>												interpolatedNormal							= (weightedNormals.A + weightedNormals.B + weightedNormals.C).Normalize();
+	::llc::SColorFloat															directionalColor							= diffuseColor * interpolatedNormal.Dot(lightDir);
 	const ::llc::SCoord2<uint32_t>												textureMetrics								= textureColors.metrics();
-	
 	::llc::SCoord2<double>														uv											= 
 		{ uvs.A.x * pixelWeights.A + uvs.B.x * pixelWeights.B + uvs.C.x * pixelWeights.C
 		, uvs.A.y * pixelWeights.A + uvs.B.y * pixelWeights.B + uvs.C.y * pixelWeights.C
 		};
+	::llc::STriangle3D<double>													weightedPositions							= 
+		{ positions.A.Cast<double>() * pixelWeights.A//((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
+		, positions.B.Cast<double>() * pixelWeights.B
+		, positions.C.Cast<double>() * pixelWeights.C
+		};
+
+	const ::llc::SCoord3<double>												interpolatedPosition						= weightedPositions.A + weightedPositions.B + weightedPositions.C;
 	::llc::SColorBGRA															interpolatedBGRA;
 	if( 0 == textureMetrics.x
 	 ||	0 == textureMetrics.y
-	 ) 
-		interpolatedBGRA													= diffuseColor + ambientColor;
+	 ||	0 != textureMetrics.y
+	 ) {
+		for(uint32_t iLight = 0; iLight < lights.size(); ++iLight) {
+			const ::llc::SLightInfoRSW												& rswLight									= lights[iLight];
+			::llc::SCoord3<double>													actualPos									= rswLight.Position.Cast<double>() / 10 + ::llc::SCoord3<double>{90, 0, -95};
+			actualPos.y															*= -1;
+			actualPos.z															*= -1;
+			::llc::SCoord3<float>													rswColor									= rswLight.Color * (1.0 - (actualPos - interpolatedPosition).Length() / 5.0);
+			lightColor															+= ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f);
+		}
+		interpolatedBGRA													= directionalColor + lightColor + ambientColor;
+		//interpolatedBGRA													= lightColor;
+	}
 	else {
 		const ::llc::SCoord2<int32_t>														uvcoords									= 
 			{ (int32_t)((uint32_t)(uv.x * textureMetrics.x) % textureMetrics.x)
@@ -40,7 +61,16 @@
 		//if(srcTexel == ::llc::SColorBGRA{0xFF, 0, 0xFF, 0xFF}) 
 		//	return 1;
 		//interpolatedBGRA														= finalColor + ambientColor;
-		interpolatedBGRA														= srcTexel * diffuseColor + srcTexel * ambientColor;
+		for(uint32_t iLight = 0; iLight < lights.size(); ++iLight) {
+			const ::llc::SLightInfoRSW												& rswLight									= lights[iLight];
+			::llc::SCoord3<double>													actualPos									= rswLight.Position.Cast<double>() / 10 + ::llc::SCoord3<double>{90, 0, -95};
+			actualPos.y															*= -1;
+			actualPos.z															*= -1;
+			::llc::SCoord3<float>													rswColor									= rswLight.Color * (1.0 - (actualPos - interpolatedPosition).Length() / 5.0);
+			lightColor															+= srcTexel * ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f);
+		}
+		interpolatedBGRA													= srcTexel * directionalColor + lightColor + srcTexel * ambientColor;
+		//interpolatedBGRA														= srcTexel * lightColor + srcTexel * ambientColor;
 	}
 	if( targetColorCell == interpolatedBGRA ) 
 		return 1;
@@ -136,6 +166,7 @@ static				::llc::error_t										transformNormals
 
 static				::llc::error_t										drawTriangles
 	( const ::llc::array_view	<::llc::STriangleWeights<uint32_t>>	& vertexIndexList
+	, const ::llc::array_view<::llc::SCoord3<float>>				& vertices
 	, const ::llc::array_view	<::llc::SCoord2<float>>				& uvs
 	, const ::llc::grid_view	<::llc::SColorBGRA>					& textureView
 	, double														fFar
@@ -144,6 +175,9 @@ static				::llc::error_t										drawTriangles
 	, ::SRenderCache												& renderCache
 	, ::llc::grid_view	<uint32_t>									& targetDepthView
 	, ::llc::grid_view	<::llc::SColorBGRA>							& targetView
+	, const ::llc::SColorFloat										& diffuseColor								
+	, const ::llc::SColorFloat										& ambientColor								
+	, const ::llc::array_view<::llc::SLightInfoRSW>					& lights
 	, uint32_t														* pixelsDrawn
 	, uint32_t														* pixelsSkipped
 	) {	// --- 
@@ -155,6 +189,11 @@ static				::llc::error_t										drawTriangles
 			error_if(errored(::llc::drawTriangle(targetDepthView, fFar, fNear, tri3DToDraw, renderCache.TrianglePixelCoords, renderCache.TrianglePixelWeights)), "Not sure if these functions could ever fail");
 			++renderCache.TrianglesDrawn;
 			const ::llc::STriangleWeights<uint32_t>										& vertexIndices								= vertexIndexList[renderCache.Triangle3dIndices[iTriangle]];
+			const ::llc::STriangle3D<float>												triangle3DPositions							= 
+				{ vertices[vertexIndices.A]
+				, vertices[vertexIndices.B]
+				, vertices[vertexIndices.C]
+				};
 			const ::llc::STriangle2D<float>												triangle3DUVs								= 
 				{ uvs[vertexIndices.A]
 				, uvs[vertexIndices.B]
@@ -163,7 +202,7 @@ static				::llc::error_t										drawTriangles
 			for(uint32_t iPixel = 0, pixCount = renderCache.TrianglePixelCoords.size(); iPixel < pixCount; ++iPixel) {
 				const ::llc::SCoord2<int32_t>												& pixelCoord								= renderCache.TrianglePixelCoords	[iPixel];
 				const ::llc::STriangleWeights<double>										& pixelWeights								= renderCache.TrianglePixelWeights	[iPixel];
-				if(0 == ::drawPixelGND(renderCache, targetView[pixelCoord.y][pixelCoord.x], pixelWeights, triangle3DUVs, textureView, iTriangle, lightDir.Cast<double>()))
+				if(0 == ::drawPixelGND(renderCache, targetView[pixelCoord.y][pixelCoord.x], pixelWeights, triangle3DPositions, triangle3DUVs, textureView, iTriangle, lightDir.Cast<double>(), diffuseColor, ambientColor, lights))
 					++*pixelsDrawn;
 				else
 					++*pixelsSkipped;
@@ -206,6 +245,18 @@ static				::llc::error_t										drawTriangles
 	const ::llc::SCoord3<float>													screenCenter								= {offscreenMetricsI.x / 2.0f, offscreenMetricsI.y / 2.0f, };
 	xWorld.Identity();
 	::llc::STimer																timerMark									= {};
+	const ::llc::SColorFloat															ambient										= 
+		{ applicationInstance.RSWData.Light.Ambient.x
+		, applicationInstance.RSWData.Light.Ambient.y
+		, applicationInstance.RSWData.Light.Ambient.z
+		, 1
+		};
+	const ::llc::SColorFloat															diffuse										= 
+		{ applicationInstance.RSWData.Light.Diffuse.x
+		, applicationInstance.RSWData.Light.Diffuse.y
+		, applicationInstance.RSWData.Light.Diffuse.z
+		, 1
+		};
 	for(uint32_t iGNDTexture = 0; iGNDTexture < applicationInstance.GNDData.TextureNames.size(); ++iGNDTexture) {
 		for(uint32_t iFacingDirection = 0; iFacingDirection < 6; ++iFacingDirection) {
 			const ::llc::grid_view<::llc::SColorBGRA>									& gndNodeTexture							= applicationInstance.TexturesGND	[iGNDTexture].View;
@@ -226,7 +277,7 @@ static				::llc::error_t										drawTriangles
 			transformNormals(gndNode.VertexIndices, gndNode.Normals, xWorld, renderCache);
 			//timerMark.Frame(); info_printf("Second iteration: %f.", timerMark.LastTimeSeconds);
 			const ::llc::SCoord3<float>													& lightDir									= applicationInstance.LightDirection;
-			drawTriangles(gndNode.VertexIndices, gndNode.UVs, gndNodeTexture, fFar, fNear, lightDir, renderCache, offscreenDepth.View, offscreen.View, &pixelsDrawn, &pixelsSkipped);
+			drawTriangles(gndNode.VertexIndices, gndNode.Vertices, gndNode.UVs, gndNodeTexture, fFar, fNear, lightDir, renderCache, offscreenDepth.View, offscreen.View, diffuse, ambient, applicationInstance.RSWData.RSWLights, &pixelsDrawn, &pixelsSkipped);
 			//timerMark.Frame(); info_printf("Third iteration: %f.", timerMark.LastTimeSeconds);
 		}
 	}
