@@ -123,8 +123,8 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	static constexpr const char													ragnaPath	[]								= "..\\data_2017\\data\\";
 	char																		temp		[512]							= {};
 	::llc::SRSWFileContents														& rswData									= applicationInstance.RSWData;
-	sprintf_s(temp, "%s%s%s", ragnaPath, "", "comodo.rsw");								llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
-	sprintf_s(temp, "%s%s%s", ragnaPath, "", &rswData.GNDFilename[0]);					llc_necall(::llc::gndFileLoad(applicationInstance.GNDData	, ::llc::view_const_string(temp)), "Error");
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", "comodo.rsw");					llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", &rswData.GNDFilename[0]);			llc_necall(::llc::gndFileLoad(applicationInstance.GNDData	, ::llc::view_const_string(temp)), "Error");
 	applicationInstance.RSMData.resize(rswData.RSWModels.size());
 	for(uint32_t iRSM = 0; iRSM < (uint32_t)rswData.RSWModels.size(); ++iRSM){
 		::llc::SRSMFileContents														& rsmData									= applicationInstance.RSMData[iRSM];
@@ -132,9 +132,9 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 		error_if(errored(::llc::rsmFileLoad(rsmData, ::llc::view_const_string(temp))), "Failed to load file: %s.", temp);
 	}
 	for(uint32_t iLight = 0; iLight < rswData.RSWLights.size(); ++iLight) {
-		rswData.RSWLights[iLight].Position		*= 1.0 / applicationInstance.GNDData.Metrics.TileScale;
-		rswData.RSWLights[iLight].Position		+= ::llc::SCoord3<float>{applicationInstance.GNDData.Metrics.Size.x / 2.0f, 0.0f, (applicationInstance.GNDData.Metrics.Size.y / 2.0f)};
-		rswData.RSWLights[iLight].Position.y	*= -1;
+		rswData.RSWLights[iLight].Position										*= 1.0 / applicationInstance.GNDData.Metrics.TileScale;
+		rswData.RSWLights[iLight].Position										+= ::llc::SCoord3<float>{applicationInstance.GNDData.Metrics.Size.x / 2.0f, 0.0f, (applicationInstance.GNDData.Metrics.Size.y / 2.0f)};
+		rswData.RSWLights[iLight].Position.y									*= -1;
 	}
 
 	applicationInstance.TexturesGND.resize(applicationInstance.GNDData.TextureNames.size());
@@ -189,8 +189,6 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			if(processTile3) { ::llc::SModelNodeGND	& gndNode3 = applicationInstance.GNDModel.Nodes[texIndex3]; gndNode3.Normals[tileMapping3.VerticesTop[0]] = normal; }
 		}
 	}
-
-
 	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and textures and this could cause an invalid memory access later on.");
 	applicationInstance.Scene.Camera.Points.Position						= {0, 30, -20};
 	applicationInstance.Scene.Camera.Range.Far								= 1000;
@@ -286,6 +284,7 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	uint32_t																	
 	textLen																	= (uint32_t)sprintf_s(buffer, "[%u x %u]. FPS: %g. Last frame seconds: %g.", mainWindow.Size.x, mainWindow.Size.y, 1 / timer.LastTimeSeconds, timer.LastTimeSeconds);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	textLen																	= (uint32_t)sprintf_s(buffer, "Triangles drawn: %u. Pixels drawn: %u. Pixels skipped: %u.", (uint32_t)applicationInstance.RenderCache.TrianglesDrawn, (uint32_t)applicationInstance.RenderCache.PixelsDrawn, (uint32_t)applicationInstance.RenderCache.PixelsSkipped);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	textLen																	= (uint32_t)sprintf_s(buffer, "Map size: {%u, %u}.", (uint32_t)applicationInstance.GNDData.Metrics.Size.x, (uint32_t)applicationInstance.GNDData.Metrics.Size.y);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dColorList  cache size: %u.", applicationInstance.RenderCache.Triangle3dColorList	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	//textLen																	= (uint32_t)sprintf_s(buffer, "TransformedNormals   cache size: %u.", applicationInstance.RenderCache.TransformedNormals	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dToDraw     cache size: %u.", applicationInstance.RenderCache.Triangle3dToDraw		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});

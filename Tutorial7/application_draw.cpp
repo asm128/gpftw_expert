@@ -42,15 +42,14 @@
 	 //||	0 != textureMetrics.y
 	 ) {
 		for(uint32_t iLight = 0; iLight < lights.size(); ++iLight) {
-			const ::llc::SLightInfoRSW												& rswLight									= lights[iLight];
-			::llc::SCoord3<float>													rswColor									= rswLight.Color * (1.0 - (rswLight.Position.Cast<double>() - interpolatedPosition).Length() / 10.0);
-			lightColor															+= ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f) / 2.0;
+			const ::llc::SLightInfoRSW													& rswLight									= lights[iLight];
+			::llc::SCoord3<float>														rswColor									= rswLight.Color * (1.0 - (rswLight.Position.Cast<double>() - interpolatedPosition).Length() / 10.0);
+			lightColor																+= ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f) / 2.0;
 		}
-		interpolatedBGRA													= directionalColor + lightColor + ambientColor;
-		//interpolatedBGRA													= lightColor;
+		interpolatedBGRA														= directionalColor + lightColor + ambientColor;
 	}
 	else {
-		const ::llc::SCoord2<int32_t>														uvcoords									= 
+		const ::llc::SCoord2<int32_t>												uvcoords									= 
 			{ (int32_t)((uint32_t)(uv.x * textureMetrics.x) % textureMetrics.x)
 			, (int32_t)((uint32_t)(uv.y * textureMetrics.y) % textureMetrics.y)
 			};
@@ -59,15 +58,14 @@
 			return 1;
 		//interpolatedBGRA														= finalColor + ambientColor;
 		for(uint32_t iLight = 0, lightCount = lights.size(); iLight < lightCount; ++iLight) {
-			const ::llc::SLightInfoRSW												& rswLight									= lights[rand() % lights.size()];
-			double																	distFactor									= (1.0 - (rswLight.Position.Cast<double>() - interpolatedPosition).Length() / 10.0);
+			const ::llc::SLightInfoRSW													& rswLight									= lights[rand() % lights.size()];
+			double																		distFactor									= 1.0 - (rswLight.Position.Cast<double>() - interpolatedPosition).Length() / 10.0;
 			if(distFactor > 0) {
-				::llc::SCoord3<float>													rswColor									= rswLight.Color * distFactor;
-				lightColor															+= srcTexel * ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f) / 2.0;
+				::llc::SCoord3<float>														rswColor									= rswLight.Color * distFactor;
+				lightColor																+= srcTexel * ::llc::SColorFloat(rswColor.x, rswColor.y, rswColor.z, 1.0f) / 2.0;
 			}
 		}
-		interpolatedBGRA													= srcTexel * directionalColor + lightColor + srcTexel * ambientColor;
-		//interpolatedBGRA														= srcTexel * lightColor + srcTexel * ambientColor;
+		interpolatedBGRA														= srcTexel * directionalColor + lightColor + srcTexel * ambientColor;
 	}
 	if( targetColorCell == interpolatedBGRA ) 
 		return 1;
@@ -196,18 +194,19 @@ static				::llc::error_t										drawTriangles
 				, uvs[vertexIndices.B]
 				, uvs[vertexIndices.C]
 				};
-			for(uint32_t iPixel = 0, pixCount = renderCache.TrianglePixelCoords.size(); iPixel < pixCount; ++iPixel) {
-				const ::llc::SCoord2<int32_t>												& pixelCoord								= renderCache.TrianglePixelCoords	[iPixel];
-				const ::llc::STriangleWeights<double>										& pixelWeights								= renderCache.TrianglePixelWeights	[iPixel];
-				if(0 == ::drawPixelGND(renderCache, targetView[pixelCoord.y][pixelCoord.x], pixelWeights, triangle3DPositions, triangle3DUVs, textureView, iTriangle, lightDir.Cast<double>(), diffuseColor, ambientColor, lights))
-					++*pixelsDrawn;
-				else
-					++*pixelsSkipped;
-			}
-			//error_if(errored(::llc::drawLine(offscreenMetrics, ::llc::SLine3D<float>{renderCache.Triangle3dToDraw[iTriangle].A, renderCache.Triangle3dToDraw[iTriangle].B}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
-			//error_if(errored(::llc::drawLine(offscreenMetrics, ::llc::SLine3D<float>{renderCache.Triangle3dToDraw[iTriangle].B, renderCache.Triangle3dToDraw[iTriangle].C}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
-			//error_if(errored(::llc::drawLine(offscreenMetrics, ::llc::SLine3D<float>{renderCache.Triangle3dToDraw[iTriangle].C, renderCache.Triangle3dToDraw[iTriangle].A}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
-			// draw normals
+			//if(vertexIndices.C == -1) {
+				for(uint32_t iPixel = 0, pixCount = renderCache.TrianglePixelCoords.size(); iPixel < pixCount; ++iPixel) {
+					const ::llc::SCoord2<int32_t>												& pixelCoord								= renderCache.TrianglePixelCoords	[iPixel];
+					const ::llc::STriangleWeights<double>										& pixelWeights								= renderCache.TrianglePixelWeights	[iPixel];
+					if(0 == ::drawPixelGND(renderCache, targetView[pixelCoord.y][pixelCoord.x], pixelWeights, triangle3DPositions, triangle3DUVs, textureView, iTriangle, lightDir.Cast<double>(), diffuseColor, ambientColor, lights))
+						++*pixelsDrawn;
+					else
+						++*pixelsSkipped;
+				}
+			//}
+			//error_if(errored(::llc::drawLine(targetView.metrics(), ::llc::SLine3D<float>{renderCache.Triangle3dToDraw[iTriangle].A, renderCache.Triangle3dToDraw[iTriangle].B}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
+			//error_if(errored(::llc::drawLine(targetView.metrics(), ::llc::SLine3D<float>{renderCache.Triangle3dToDraw[iTriangle].B, renderCache.Triangle3dToDraw[iTriangle].C}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
+			//error_if(errored(::llc::drawLine(targetView.metrics(), ::llc::SLine3D<float>{renderCache.Triangle3dToDraw[iTriangle].C, renderCache.Triangle3dToDraw[iTriangle].A}, renderCache.WireframePixelCoords)), "Not sure if these functions could ever fail");
 		} 
 	return 0;
 }
