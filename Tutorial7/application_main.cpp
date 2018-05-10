@@ -252,6 +252,14 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	lightDir.RotateY(frameInfo.Microseconds.LastFrame / 1000000.0f);
 	lightDir.Normalize();
 
+
+	::llc::SRSWFileContents														& rswData									= applicationInstance.RSWData;
+	const ::llc::SCoord3<float>													halfMapDir									= ::llc::SCoord3<float>{applicationInstance.GNDData.Metrics.Size.x / 2.0f, 0.0f, (applicationInstance.GNDData.Metrics.Size.y / 2.0f)};
+	for(uint32_t iLight = 0; iLight < rswData.RSWLights.size(); ++iLight) {
+		rswData.RSWLights[iLight].Position										-= halfMapDir;
+		rswData.RSWLights[iLight].Position.RotateY(frameInfo.Seconds.LastFrame);
+		rswData.RSWLights[iLight].Position										+= halfMapDir;
+	}
 	//------------------------------------------------ 
 	//applicationInstance.GridPivot.Scale										= {2.f, 4.f, 2.f};
 	applicationInstance.GridPivot.Scale										= {1, -1, -1};
@@ -281,18 +289,16 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	::llc::STimer																& timer										= applicationInstance.Framework.Timer;
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	char																		buffer		[256]							= {};
-	uint32_t																	
-	textLen																	= (uint32_t)sprintf_s(buffer, "[%u x %u]. FPS: %g. Last frame seconds: %g.", mainWindow.Size.x, mainWindow.Size.y, 1 / timer.LastTimeSeconds, timer.LastTimeSeconds);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Triangles drawn: %u. Pixels drawn: %u. Pixels skipped: %u.", (uint32_t)applicationInstance.RenderCache.TrianglesDrawn, (uint32_t)applicationInstance.RenderCache.PixelsDrawn, (uint32_t)applicationInstance.RenderCache.PixelsSkipped);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	textLen																	= (uint32_t)sprintf_s(buffer, "Map size: {%u, %u}.", (uint32_t)applicationInstance.GNDData.Metrics.Size.x, (uint32_t)applicationInstance.GNDData.Metrics.Size.y);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dColorList  cache size: %u.", applicationInstance.RenderCache.Triangle3dColorList	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	//textLen																	= (uint32_t)sprintf_s(buffer, "TransformedNormals   cache size: %u.", applicationInstance.RenderCache.TransformedNormals	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dToDraw     cache size: %u.", applicationInstance.RenderCache.Triangle3dToDraw		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2dToDraw     cache size: %u.", applicationInstance.RenderCache.Triangle2dToDraw		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle3dIndices    cache size: %u.", applicationInstance.RenderCache.Triangle3dIndices		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2dIndices    cache size: %u.", applicationInstance.RenderCache.Triangle2dIndices		.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
-	//textLen																	= (uint32_t)sprintf_s(buffer, "Triangle2d23dIndices cache size: %u.", applicationInstance.RenderCache.Triangle2d23dIndices	.size()); ::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+
+	const ::llc::SGNDFileContents												& gndData									= applicationInstance.GNDData;
+	const ::llc::SRSWFileContents												& rswData									= applicationInstance.RSWData;
+	const ::SRenderCache														& renderCache								= applicationInstance.RenderCache;
+	uint32_t
+
+	textLen																	= (uint32_t)sprintf_s(buffer, "[%u x %u]. FPS: %g. Last frame seconds: %g."					, mainWindow.Size.x, mainWindow.Size.y, 1 / timer.LastTimeSeconds, timer.LastTimeSeconds);							::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	textLen																	= (uint32_t)sprintf_s(buffer, "Triangles drawn: %u. Pixels drawn: %u. Pixels skipped: %u."	, (uint32_t)renderCache.TrianglesDrawn, (uint32_t)renderCache.PixelsDrawn, (uint32_t)renderCache.PixelsSkipped);	::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
+	textLen																	= (uint32_t)sprintf_s(buffer, "Tile grid size: {x=%u, z=%u}. Dynamic light count: %u."		, gndData.Metrics.Size.x, gndData.Metrics.Size.y, rswData.RSWLights.size());										::llc::textLineDrawAlignedFixedSizeRGBA(offscreenView, fontAtlasView, --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen});
 	//::textDrawAlignedFixedSize(offscreenView, applicationInstance.TextureFontMonochrome.View, fontAtlasView.metrics(), --lineOffset, offscreenMetrics, sizeCharCell, {buffer, textLen}, textColor);
 	return 0;																																																
 }
-	
+		

@@ -218,19 +218,22 @@ static				::llc::error_t										drawTriangles
 	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
 	::memset(offscreenDepth	.Texels.begin(), -1, sizeof(uint32_t)								* offscreenDepth	.Texels.size());	// Clear target.
 	::memset(offscreen		.Texels.begin(), 0, sizeof(::llc::SFramework::TOffscreen::TTexel)	* offscreen			.Texels.size());	// Clear target.
-	for(uint32_t y = 0, yMax = offscreenMetrics.y; y < yMax; ++y)
-	for(uint32_t x = 0, xMax = offscreenMetrics.x; x < xMax; ++x)
-		offscreen.View[y][x]													= {(uint8_t)(y / 10), 0, 0, 0xFF};
+	for(uint32_t y = 0, yMax = offscreenMetrics.y; y < yMax; ++y) {
+		const uint8_t																colorHeight									= (uint8_t)(y / 10);
+		for(uint32_t x = 0, xMax = offscreenMetrics.x; x < xMax; ++x)
+			offscreen.View[y][x]													= {colorHeight, 0, 0, 0xFF};
+	}
 
 	::SRenderCache																& renderCache								= applicationInstance.RenderCache;
 
 	const ::llc::SMatrix4<float>												& projection								= applicationInstance.Scene.Transforms.FinalProjection	;
 	const ::llc::SMatrix4<float>												& viewMatrix								= applicationInstance.Scene.Transforms.View				;
 
-	::llc::SMatrix4<float>														xViewProjection								= viewMatrix * projection;
-	::llc::SMatrix4<float>														xWorld										= {};
+	//::llc::SMatrix4<float>														xViewProjection								= viewMatrix * projection;
 	//::llc::SMatrix4<float>														xRotation									= {};
 	//xRotation.Identity();
+	::llc::SMatrix4<float>														xWorld										= {};
+	xWorld.Identity();
 	const double																& fFar										= applicationInstance.Scene.Camera.Range.Far	;
 	const double																& fNear										= applicationInstance.Scene.Camera.Range.Near	;
 	uint32_t																	& pixelsDrawn								= applicationInstance.RenderCache.PixelsDrawn	= 0;
@@ -239,20 +242,19 @@ static				::llc::error_t										drawTriangles
 	renderCache.TrianglesDrawn												= 0;
 	const ::llc::SCoord2<int32_t>												offscreenMetricsI							= offscreenMetrics.Cast<int32_t>();
 	const ::llc::SCoord3<float>													screenCenter								= {offscreenMetricsI.x / 2.0f, offscreenMetricsI.y / 2.0f, };
-	xWorld.Identity();
-	::llc::STimer																timerMark									= {};
-	const ::llc::SColorFloat															ambient										= 
+	const ::llc::SColorFloat													ambient										= 
 		{ applicationInstance.RSWData.Light.Ambient.x
 		, applicationInstance.RSWData.Light.Ambient.y
 		, applicationInstance.RSWData.Light.Ambient.z
 		, 1
 		};
-	const ::llc::SColorFloat															diffuse										= 
+	const ::llc::SColorFloat													diffuse										= 
 		{ applicationInstance.RSWData.Light.Diffuse.x
 		, applicationInstance.RSWData.Light.Diffuse.y
 		, applicationInstance.RSWData.Light.Diffuse.z
 		, 1
 		};
+	::llc::STimer																timerMark									= {};
 	for(uint32_t iGNDTexture = 0; iGNDTexture < applicationInstance.GNDData.TextureNames.size(); ++iGNDTexture) {
 		for(uint32_t iFacingDirection = 0; iFacingDirection < 6; ++iFacingDirection) {
 			const ::llc::grid_view<::llc::SColorBGRA>									& gndNodeTexture							= applicationInstance.TexturesGND	[iGNDTexture].View;
