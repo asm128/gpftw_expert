@@ -9,6 +9,7 @@
 #include "llc_app_impl.h"
 #include "llc_ro_rsm.h"
 #include "llc_ro_rsw.h"
+#include "llc_encoding.h"
 
 #include <process.h>
 
@@ -103,6 +104,7 @@ static				::llc::error_t										bmpOrBmgLoad								(::llc::view_string bmpFil
 					::llc::error_t										mainWindowCreate							(::llc::SDisplay& mainWindow, HINSTANCE hInstance);
 static				::llc::error_t										setup										(::SApplication& applicationInstance)													{
 	g_ApplicationInstance													= &applicationInstance;
+	
 	error_if(errored(setupThreads(applicationInstance)), "Unknown.");
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
@@ -121,9 +123,16 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	}
 
 	static constexpr const char													ragnaPath	[]								= "..\\data_2017\\data\\";
+	::llc::array_pod<char_t>													base64Encoded;
+	::llc::array_pod<ubyte_t>													base64Decoded;
+	::llc::base64Encode({(const ubyte_t*)ragnaPath, ::llc::size(ragnaPath)}, base64Encoded);
+	::llc::base64Decode(base64Encoded, base64Decoded);
+	info_printf("base64Encoded: %s.", &base64Encoded[0]);
+	info_printf("base64Decoded: %s.", &base64Decoded[0]);
+
 	char																		temp		[512]							= {};
 	::llc::SRSWFileContents														& rswData									= applicationInstance.RSWData;
-	sprintf_s(temp, "%s%s%s", ragnaPath, "", "comodo.rsw");					llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", "comodo.rsw");						llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
 	sprintf_s(temp, "%s%s%s", ragnaPath, "", &rswData.GNDFilename[0]);			llc_necall(::llc::gndFileLoad(applicationInstance.GNDData	, ::llc::view_const_string(temp)), "Error");
 	applicationInstance.RSMData.resize(rswData.RSWModels.size());
 	for(uint32_t iRSM = 0; iRSM < (uint32_t)rswData.RSWModels.size(); ++iRSM){

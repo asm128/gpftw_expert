@@ -120,10 +120,11 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			;
 	}
 
+	static constexpr const char													rswFilename	[]								= "comodo.rsw";
 	static constexpr const char													ragnaPath	[]								= "..\\data_2017\\data\\";
 	char																		temp		[512]							= {};
 	::llc::SRSWFileContents														& rswData									= applicationInstance.RSWData;
-	sprintf_s(temp, "%s%s%s", ragnaPath, "", "comodo.rsw");					llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", rswFilename);						llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
 	sprintf_s(temp, "%s%s%s", ragnaPath, "", &rswData.GNDFilename[0]);			llc_necall(::llc::gndFileLoad(applicationInstance.GNDData	, ::llc::view_const_string(temp)), "Error");
 	applicationInstance.RSMData.resize(rswData.RSWModels.size());
 	for(uint32_t iRSM = 0; iRSM < (uint32_t)rswData.RSWModels.size(); ++iRSM){
@@ -131,6 +132,8 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 		sprintf_s(temp, "%s%s%s", ragnaPath, "model\\", &rswData.RSWModels[iRSM].Filename[0]);	
 		error_if(errored(::llc::rsmFileLoad(rsmData, ::llc::view_const_string(temp))), "Failed to load file: %s.", temp);
 	}
+	applicationInstance.RSMMeshes	.resize(applicationInstance.RSMData.size());
+	applicationInstance.RSMTextures	.resize(applicationInstance.RSMData.size());
 	for(uint32_t iLight = 0; iLight < rswData.RSWLights.size(); ++iLight) {
 		rswData.RSWLights[iLight].Position										*= 1.0 / applicationInstance.GNDData.Metrics.TileScale;
 		rswData.RSWLights[iLight].Position										+= ::llc::SCoord3<float>{applicationInstance.GNDData.Metrics.Size.x / 2.0f, 0.0f, (applicationInstance.GNDData.Metrics.Size.y / 2.0f)};
@@ -269,19 +272,28 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	return 0;
 }
 
-					::llc::error_t										drawGrides									(::SApplication& applicationInstance);
 					::llc::error_t										drawGND										(::SApplication& applicationInstance);
+					::llc::error_t										drawRSM										(::SApplication& applicationInstance);
 
 					::llc::error_t										draw										(::SApplication& applicationInstance)											{	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
-	//int32_t 																	pixelsDrawn0								= drawGrides(applicationInstance); error_if(errored(pixelsDrawn0), "??");
-	int32_t 																	pixelsDrawn1								= drawGND	(applicationInstance); error_if(errored(pixelsDrawn1), "??");
+	::llc::SFramework															& framework									= applicationInstance.Framework;
+	::llc::SFramework::TOffscreen												& offscreen									= framework.Offscreen;
+	::llc::STexture<uint32_t>													& offscreenDepth							= framework.OffscreenDepthStencil;
+	::memset(offscreenDepth	.Texels.begin(), -1, sizeof(uint32_t)								* offscreenDepth	.Texels.size());	// Clear target.
+	::memset(offscreen		.Texels.begin(), 0, sizeof(::llc::SFramework::TOffscreen::TTexel)	* offscreen			.Texels.size());	// Clear target.
+	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
+	for(uint32_t y = 0, yMax = offscreenMetrics.y; y < yMax; ++y) {	// Draw background gradient.
+		const uint8_t																colorHeight									= (uint8_t)(y / 10);
+		for(uint32_t x = 0, xMax = offscreenMetrics.x; x < xMax; ++x)
+			offscreen.View[y][x]													= {colorHeight, 0, 0, 0xFF};
+	}
+
+	int32_t 																	pixelsDrawn1								= drawGND(applicationInstance); error_if(errored(pixelsDrawn1), "??");
+	int32_t 																	pixelsDrawn2								= drawRSM(applicationInstance); error_if(errored(pixelsDrawn2), "??");
 	static constexpr const ::llc::SCoord2<int32_t>								sizeCharCell								= {9, 16};
 	uint32_t																	lineOffset									= 0;
 	static constexpr const char													textLine2	[]								= "Press ESC to exit.";
-	::llc::SFramework															& framework									= applicationInstance.Framework;
-	::llc::SFramework::TOffscreen												& offscreen									= framework.Offscreen;
 	::llc::grid_view<::llc::SColorBGRA>											& offscreenView								= offscreen.View;
-	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
 	const ::llc::grid_view<::llc::SColorBGRA>									& fontAtlasView								= applicationInstance.TextureFont.View;
 	const ::llc::SColorBGRA														textColor									= {0, framework.FrameInfo.FrameNumber % 0xFFU, 0, 0xFFU};
 	::llc::textLineDrawAlignedFixedSizeLit(offscreenView, applicationInstance.TextureFontMonochrome.View, fontAtlasView.metrics(), lineOffset = offscreenMetrics.y / sizeCharCell.y - 1, offscreenMetrics, sizeCharCell, textLine2, textColor);

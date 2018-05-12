@@ -116,7 +116,7 @@ static				::llc::error_t										bmpOrBmgLoad								(::llc::view_string bmpFil
 			||	0 != srcColor.b
 			;
 	}
-	llc_necall(::llc::gndFileLoad(applicationInstance.GNDData, ".\\data_2005\\data\\prt_fild00.gnd"), "Error");
+	llc_necall(::llc::gndFileLoad(applicationInstance.GNDData, "..\\data_2006\\data\\prt_fild00.gnd"), "Error");
 	::llc::SModelNodeGND														modelNode;
 	applicationInstance.TexturesGND.resize(applicationInstance.GNDData.TextureNames.size());
 	for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++ iTex) {
