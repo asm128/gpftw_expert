@@ -211,7 +211,7 @@ static				::llc::error_t										drawTriangles
 	return 0;
 }
 
-					::llc::error_t										drawGND										(::SApplication& applicationInstance)											{	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
+					::llc::error_t										drawRSM										(::SApplication& applicationInstance)											{	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
 	::llc::SFramework															& framework									= applicationInstance.Framework;
 	::llc::SFramework::TOffscreen												& offscreen									= framework.Offscreen;
 	::llc::STexture<uint32_t>													& offscreenDepth							= framework.OffscreenDepthStencil;
@@ -223,10 +223,10 @@ static				::llc::error_t										drawTriangles
 	const ::llc::SMatrix4<float>												& viewMatrix								= applicationInstance.Scene.Transforms.View				;
 
 	//::llc::SMatrix4<float>														xViewProjection								= viewMatrix * projection;
-	//::llc::SMatrix4<float>														xRotation									= {};
-	//xRotation.Identity();
+	::llc::SMatrix4<float>														xRotation									= {};
 	::llc::SMatrix4<float>														xWorld										= {};
-	xWorld.Identity();
+	xRotation	.Identity();
+	xWorld		.Identity();
 	const double																& fFar										= applicationInstance.Scene.Camera.Range.Far	;
 	const double																& fNear										= applicationInstance.Scene.Camera.Range.Near	;
 	uint32_t																	& pixelsDrawn								= applicationInstance.RenderCache.PixelsDrawn	= 0;
@@ -235,27 +235,17 @@ static				::llc::error_t										drawTriangles
 	renderCache.TrianglesDrawn												= 0;
 	const ::llc::SCoord2<int32_t>												offscreenMetricsI							= offscreenMetrics.Cast<int32_t>();
 	const ::llc::SCoord3<float>													screenCenter								= {offscreenMetricsI.x / 2.0f, offscreenMetricsI.y / 2.0f, };
-	const ::llc::SColorFloat													ambient										= 
-		{ applicationInstance.RSWData.Light.Ambient.x
-		, applicationInstance.RSWData.Light.Ambient.y
-		, applicationInstance.RSWData.Light.Ambient.z
-		, 1
-		};
-	const ::llc::SColorFloat													diffuse										= 
-		{ applicationInstance.RSWData.Light.Diffuse.x
-		, applicationInstance.RSWData.Light.Diffuse.y
-		, applicationInstance.RSWData.Light.Diffuse.z
-		, 1
-		};
+	const ::llc::SColorFloat													ambient										= ::llc::DARKGRAY	* .5;
+	const ::llc::SColorFloat													diffuse										= ::llc::WHITE		* .5;
 	::llc::STimer																timerMark									= {};
-	for(uint32_t iGNDTexture = 0, textureCount = applicationInstance.GNDData.TextureNames.size(); iGNDTexture < textureCount; ++iGNDTexture) {
-		for(uint32_t iFacingDirection = 0; iFacingDirection < 6; ++iFacingDirection) {
-			const ::llc::grid_view<::llc::SColorBGRA>									& gndNodeTexture							= applicationInstance.TexturesGND	[iGNDTexture].View;
-			const ::llc::SModelNodeGND													& gndNode									= applicationInstance.GNDModel.Nodes[applicationInstance.GNDData.TextureNames.size() * iFacingDirection + iGNDTexture];
-			xWorld		.Scale			(applicationInstance.GridPivot.Scale, true);
-			//xRotation	.SetOrientation	(applicationInstance.GridPivot.Orientation.Normalize());
-			//xWorld																	= xWorld * xRotation;
-			xWorld		.SetTranslation	(applicationInstance.GridPivot.Position, false);
+	for(uint32_t iGNDTexture = 0, textureCount = applicationInstance.RSMData.TextureNames.size(); iGNDTexture < textureCount; ++iGNDTexture) {
+		for(uint32_t iNode = 0; iNode < applicationInstance.RSMData.Nodes.size(); ++iNode) {
+			const ::llc::grid_view<::llc::SColorBGRA>									& gndNodeTexture							= applicationInstance.TexturesRSM[iGNDTexture].View;
+			const ::llc::SModelNodeRSM													& gndNode									= applicationInstance.RSMNodes[applicationInstance.RSMData.TextureNames.size() * iNode + iGNDTexture];
+			xWorld		.Scale			(applicationInstance.RSMPivot.Scale, true);
+			xRotation	.SetOrientation	(applicationInstance.RSMPivot.Orientation.Normalize());
+			xWorld																	= xWorld * xRotation;
+			xWorld		.SetTranslation	(applicationInstance.RSMPivot.Position, false);
 			::llc::clear
 				( renderCache.Triangle3dWorld
 				, renderCache.Triangle3dToDraw		
@@ -268,7 +258,7 @@ static				::llc::error_t										drawTriangles
 			transformNormals(gndNode.VertexIndices, gndNode.Normals, xWorld, renderCache);
 			//timerMark.Frame(); info_printf("Second iteration: %f.", timerMark.LastTimeSeconds);
 			const ::llc::SCoord3<float>													& lightDir									= applicationInstance.LightDirection;
-			drawTriangles(gndNode.VertexIndices, gndNode.Vertices, gndNode.UVs, gndNodeTexture, fFar, fNear, lightDir, renderCache, offscreenDepth.View, offscreen.View, diffuse, ambient, applicationInstance.RSWData.RSWLights, &pixelsDrawn, &pixelsSkipped);
+			drawTriangles(gndNode.VertexIndices, gndNode.Vertices, gndNode.UVs, gndNodeTexture, fFar, fNear, lightDir, renderCache, offscreenDepth.View, offscreen.View, diffuse, ambient, {}, &pixelsDrawn, &pixelsSkipped);
 			//timerMark.Frame(); info_printf("Third iteration: %f.", timerMark.LastTimeSeconds);
 		}
 	}
@@ -284,67 +274,4 @@ static				::llc::error_t										drawTriangles
 			++pixelsSkipped;
 	}
 	return (::llc::error_t)pixelsDrawn;
-}
-
-					::llc::error_t										drawRSM										(::SApplication& applicationInstance)											{	// --- This function will draw some coloured symbols in each cell of the ASCII screen.. Or not.
-	::llc::SFramework															& framework									= applicationInstance.Framework;
-	::llc::SFramework::TOffscreen												& offscreen									= framework.Offscreen;
-	::llc::STexture<uint32_t>													& offscreenDepth							= framework.OffscreenDepthStencil;
-	const ::llc::SCoord2<uint32_t>												& offscreenMetrics							= offscreen.View.metrics();
-
-	::SRenderCache																& renderCache								= applicationInstance.RenderCache;
-
-	const ::llc::SMatrix4<float>												& projection								= applicationInstance.Scene.Transforms.FinalProjection	;
-	const ::llc::SMatrix4<float>												& viewMatrix								= applicationInstance.Scene.Transforms.View				;
-
-	//::llc::SMatrix4<float>														xViewProjection								= viewMatrix * projection;
-	::llc::SMatrix4<float>														xRotation									= {};
-	xRotation.Identity();
-	::llc::SMatrix4<float>														xWorld										= {};
-	xWorld.Identity();
-	const double																& fFar										= applicationInstance.Scene.Camera.Range.Far	;
-	const double																& fNear										= applicationInstance.Scene.Camera.Range.Near	;
-	uint32_t																	& pixelsDrawn								= applicationInstance.RenderCache.PixelsDrawn	= 0;
-	uint32_t																	& pixelsSkipped								= applicationInstance.RenderCache.PixelsSkipped	= 0;
-	renderCache.WireframePixelCoords.clear();
-	renderCache.TrianglesDrawn												= 0;
-	const ::llc::SCoord2<int32_t>												offscreenMetricsI							= offscreenMetrics.Cast<int32_t>();
-	const ::llc::SCoord3<float>													screenCenter								= {offscreenMetricsI.x / 2.0f, offscreenMetricsI.y / 2.0f, };
-	const ::llc::SColorFloat													ambient										= 
-		{ applicationInstance.RSWData.Light.Ambient.x
-		, applicationInstance.RSWData.Light.Ambient.y
-		, applicationInstance.RSWData.Light.Ambient.z
-		, 1
-		};
-	const ::llc::SColorFloat													diffuse										= 
-		{ applicationInstance.RSWData.Light.Diffuse.x
-		, applicationInstance.RSWData.Light.Diffuse.y
-		, applicationInstance.RSWData.Light.Diffuse.z
-		, 1
-		};
-
-	::llc::STimer																timerMark									= {};
-	for(uint32_t iModel = 0, modelCount = applicationInstance.RSMData.size(); iModel < modelCount; ++iModel) {
-		::llc::SMatrix4<float>														xNode										= {};
-		const ::llc::SRSMFileContents												& modelCurrent								= applicationInstance.RSMData[iModel];
-		const ::llc::SModelInfoRSW													& rswModel									= applicationInstance.RSWData.RSWModels[iModel];
-		for(uint32_t iRSMTexture = 0, textureCount = modelCurrent.TextureNames.size(); iRSMTexture < textureCount; ++iRSMTexture) {
-			for(uint32_t iNode = 0, nodeCount = modelCurrent.Nodes.size(); iNode < nodeCount; ++iNode) {
-				const ::llc::SRSMNode													& nodeCurrent								= modelCurrent.Nodes[iNode];
-				xWorld.Scale				(rswModel.Scale		, true);
-				xWorld.SetTranslation		(rswModel.Position	, false);
-				//xRotation.SetOrientation	
-				for(uint32_t iFace = 0, faceCount = nodeCurrent.Faces.size(); iFace < faceCount; ++iFace) {
-					const ::llc::SRSMFace													& faceCurrent								= nodeCurrent.Faces[iFace];
-					const ::llc::STriangle3D<float>											triangleOriginal							= 
-						{ nodeCurrent.Vertices[faceCurrent.Vertices[0]]
-						, nodeCurrent.Vertices[faceCurrent.Vertices[1]]
-						, nodeCurrent.Vertices[faceCurrent.Vertices[2]]
-						};
-					continue;
-				}
-			}
-		}
-	}
-	return 0;
 }

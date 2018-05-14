@@ -74,28 +74,24 @@ struct SThreadArgs {
 struct SApplication {
 						::llc::SFramework												Framework							;
 
-						::llc::array_obj<::llc::STexture<::llc::SColorBGRA>>			TexturesGND							= {};
+
 						::llc::STexture<::llc::SColorBGRA>								TextureFont							= {};
 						::llc::STextureMonochrome<uint32_t>								TextureFontMonochrome				= {};
 						::llc::SGUI														GUI									= {};
 
-						::llc::SModelPivot	<float>										GridPivot							= {};
 
 						::llc::SScene													Scene;
 						::llc::SCoord3<float>											LightDirection						= {10, 5, 0};
-						::llc::SGNDFileContents											GNDData								= {};
-						::llc::SRSWFileContents											RSWData								= {};
-						::llc::array_obj<::llc::SRSMFileContents>						RSMData								= {};
-						::llc::array_obj<::llc::array_obj<::llc::SModelNodeRSM>>		RSMMeshes							= {};
-						::llc::array_obj<::llc::array_obj<::llc::STexture<float>>>		RSMTextures							= {};
+						// RSM stuff.
+						::llc::SRSMFileContents											RSMData								= {};
 
-						::llc::SModelGND												GNDModel							= {};
-						//::llc::array_obj<::llc::SModelRSM>							RSMModel							= {};
+						::llc::SModelPivot	<float>										RSMPivot							= {};
+
+						::llc::array_obj<::llc::SModelNodeRSM>							RSMNodes							= {};
+						::llc::array_obj<::llc::STexture<::llc::SColorBGRA>>			TexturesRSM							= {};
 
 						// cabildo 2954
 						::SRenderCache													RenderCache							= {};
-						::SApplicationThreads											Threads								= {};
-						::SThreadArgs													ThreadArgs[4]						= {};
 
 																						SApplication						(::llc::SRuntimeValues& runtimeValues)			noexcept	: Framework(runtimeValues) {}
 };
