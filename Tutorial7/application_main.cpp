@@ -278,11 +278,9 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	return 0;
 }
 
-					::llc::error_t										drawGrides									(::SApplication& applicationInstance);
 					::llc::error_t										drawGND										(::SApplication& applicationInstance);
 
 					::llc::error_t										draw										(::SApplication& applicationInstance)											{	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
-	//int32_t 																	pixelsDrawn0								= drawGrides(applicationInstance); error_if(errored(pixelsDrawn0), "??");
 	int32_t 																	pixelsDrawn1								= drawGND	(applicationInstance); error_if(errored(pixelsDrawn1), "??");
 	static constexpr const ::llc::SCoord2<int32_t>								sizeCharCell								= {9, 16};
 	uint32_t																	lineOffset									= 0;

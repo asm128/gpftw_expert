@@ -46,10 +46,7 @@ extern				::SApplication														* g_ApplicationInstance						;
 				mainDisplay.Repaint																		= true; 
 				char																						buffer		[256]							= {};
 				sprintf_s(buffer, "[%u x %u]. Last frame seconds: %g. ", (uint32_t)newMetrics.x, (uint32_t)newMetrics.y, applicationInstance.Framework.Timer.LastTimeSeconds);
-#if defined(UNICODE)
-#else
-				SetWindowText(mainDisplay.PlatformDetail.WindowHandle, buffer);
-#endif
+				SetWindowTextA(mainDisplay.PlatformDetail.WindowHandle, buffer);
 			}
 		}
 		if( wParam == SIZE_MINIMIZED ) {
@@ -79,9 +76,9 @@ extern				::SApplication														* g_ApplicationInstance						;
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-					void																initWndClass								(::HINSTANCE hInstance, const TCHAR* className, WNDPROC wndProc, ::WNDCLASSEX& wndClassToInit)	{
+					void																initWndClass								(::HINSTANCE hInstance, const TCHAR* className, ::WNDCLASSEX& wndClassToInit)	{
 	wndClassToInit																			= {sizeof(::WNDCLASSEX),};
-	wndClassToInit.lpfnWndProc																= wndProc;
+	wndClassToInit.lpfnWndProc																= ::mainWndProc;
 	wndClassToInit.hInstance																= hInstance;
 	wndClassToInit.hCursor																	= LoadCursor(NULL, IDC_ARROW);
 	wndClassToInit.hbrBackground															= (::HBRUSH)(COLOR_3DFACE + 1);
@@ -90,7 +87,7 @@ extern				::SApplication														* g_ApplicationInstance						;
 
 					::llc::error_t														mainWindowCreate							(::llc::SDisplay& mainWindow, HINSTANCE hInstance)													{ 
 	::llc::SDisplayPlatformDetail																& displayDetail								= mainWindow.PlatformDetail;
-	::initWndClass(hInstance, displayDetail.WindowClassName, ::mainWndProc, displayDetail.WindowClass);
+	::initWndClass(hInstance, displayDetail.WindowClassName, displayDetail.WindowClass);
 	::RegisterClassEx(&displayDetail.WindowClass);
 	mainWindow.Size																			= {::BMP_SCREEN_WIDTH, ::BMP_SCREEN_HEIGHT};
 	::RECT																						finalClientRect								= {100, 100, 100 + (LONG)mainWindow.Size.x, 100 + (LONG)mainWindow.Size.y};
