@@ -90,14 +90,22 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			;
 	}
 
-	static constexpr const char													rswFilename	[]								= "manuk\\창고정제물01.rsm";
+	static constexpr const char													rswFilename	[]								= "니플헤임\\니플헤임-풍차.rsm";
 	static constexpr const char													ragnaPath	[]								= "..\\data_2017\\data\\";
 	char																		temp		[512]							= {};
 	::llc::SRSMFileContents														& rsmData									= applicationInstance.RSMData;
 	sprintf_s(temp, "%s%s%s", ragnaPath, "model\\", rswFilename);	
 	llc_necall(::llc::rsmFileLoad(rsmData, ::llc::view_const_string(temp)), "Error");
-	llc_necall(applicationInstance.RSMNodes		.resize(applicationInstance.RSMData.Nodes.size() * applicationInstance.RSMData.TextureNames.size())	, "Why would this fail? Corrupt RSM?");
-	llc_necall(applicationInstance.TexturesRSM	.resize(applicationInstance.RSMData.TextureNames.size())											, "Why would this fail? Corrupt RSM?");
+
+	llc_necall(applicationInstance.TexturesRSM.resize(rsmData.TextureNames.size()), "Why would this fail? Corrupt RSM?");
+	for(uint32_t iTex = 0, texCount = rsmData.TextureNames.size(); iTex < texCount; ++iTex) {
+		sprintf_s(temp, "%s%s%s", ragnaPath, "texture\\", &rsmData.TextureNames[iTex][0]);	
+		ce_if(errored(::llc::bmpFileLoad(::llc::view_const_string(temp), applicationInstance.TexturesRSM[iTex])), "File not found? %s.", &rsmData.TextureNames[iTex][0]);
+		info_printf("RSM BMP loaded successfully: %s.", &rsmData.TextureNames[iTex][0]);
+	}
+
+	llc_necall(applicationInstance.RSMNodes.resize(rsmData.Nodes.size() * applicationInstance.RSMData.TextureNames.size()), "Why would this fail? Corrupt RSM?");
+	::llc::rsmGeometryGenerate(rsmData, applicationInstance.RSMNodes);
 
 	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and textures and this could cause an invalid memory access later on.");
 	applicationInstance.Scene.Camera.Points.Position						= {0, 30, -20};
@@ -164,6 +172,7 @@ static				::llc::error_t										update										(::SApplication& applicationIn
 	//------------------------------------------------ 
 	//applicationInstance.GridPivot.Scale										= {2.f, 4.f, 2.f};
 	applicationInstance.RSMPivot.Scale										= {1, -1, -1};
+	applicationInstance.RSMPivot.Scale										/= 10.0;
 	//applicationInstance.GridPivot.Orientation.y								= (float)(sinf((float)(frameInfo.Seconds.Total / 2)) * ::llc::math_2pi);
 	//applicationInstance.GridPivot.Orientation.w								= 1;
 	//applicationInstance.GridPivot.Orientation.Normalize();

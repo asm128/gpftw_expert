@@ -177,7 +177,7 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	char																		temp		[512]							= {};
 	::llc::SRSWFileContents														& rswData									= applicationInstance.RSWData;
 	::llc::SGNDFileContents														& gndData									= applicationInstance.GNDData;
-	sprintf_s(temp, "%s%s%s", ragnaPath, "", "ra_fild13.rsw");			llc_necall(::llc::rswFileLoad(rswData, ::llc::view_const_string(temp)), "Error");
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", "niflheim.rsw");			llc_necall(::llc::rswFileLoad(rswData, ::llc::view_const_string(temp)), "Error");
 	sprintf_s(temp, "%s%s%s", ragnaPath, "", &rswData.GNDFilename[0]);	llc_necall(::llc::gndFileLoad(gndData, ::llc::view_const_string(temp)), "Error");
 
 	applicationInstance.RSMData.resize(rswData.RSWModels.size());
