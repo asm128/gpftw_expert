@@ -123,7 +123,7 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	::llc::SModelNodeGND														modelNode;
 	applicationInstance.TexturesGND.resize(applicationInstance.GNDData.TextureNames.size());
 	for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++ iTex) {
-		//static constexpr	const char												respath			[]							= ".\\data\\texture";
+		//static constexpr	const char												respath			[]							= "..\\data\\texture";
 		static constexpr	const char												respath			[]							= "..\\data_2006\\data\\texture";
 		char																		filepathinal	[512]						= {};
 		sprintf_s(filepathinal, "%s\\%s", respath, applicationInstance.GNDData.TextureNames[iTex].c_str());

@@ -158,7 +158,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	//SModelNodeGND																modelNode;
 	//applicationInstance.TexturesGND.resize(applicationInstance.GNDData.TextureNames.size());
 	//for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++ iTex) {
-	//	static constexpr	const char												respath			[]							= ".\\data\\texture";
+	//	static constexpr	const char												respath			[]							= "..\\data\\texture";
 	//	char																		filepathinal	[512]						= {};
 	//	sprintf_s(filepathinal, "%s\\%s", respath, applicationInstance.GNDData.TextureNames[iTex].c_str());
 	//	error_if(errored(::llc::bmpFileLoad((::llc::view_const_string)filepathinal, applicationInstance.TexturesGND[iTex])), "Not found? %s.", filepathinal);
