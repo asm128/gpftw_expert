@@ -224,12 +224,13 @@ static				::llc::error_t										drawTriangles
 	::llc::STimer																timerMark									= {};
 	for(uint32_t iGNDTexture = 0, textureCount = applicationInstance.RSMData.TextureNames.size(); iGNDTexture < textureCount; ++iGNDTexture) {
 		for(uint32_t iNode = 0, countNodes = applicationInstance.RSMData.Nodes.size(); iNode < countNodes; ++iNode) {
-			const ::llc::grid_view<::llc::SColorBGRA>									& gndNodeTexture							= applicationInstance.TexturesRSM[iGNDTexture].View;
+			const ::llc::grid_view<::llc::SColorBGRA>									& gndNodeTexture							= applicationInstance.RSMTextures[iGNDTexture].View;
 			const ::llc::SModelNodeRSM													& gndNode									= applicationInstance.RSMNodes[iGNDTexture * countNodes + iNode];
-			xWorld		.Scale			(applicationInstance.RSMPivot.Scale, true);
-			xRotation	.SetOrientation	(applicationInstance.RSMPivot.Orientation.Normalize());
-			xWorld																	= xWorld * xRotation;
-			xWorld		.SetTranslation	(applicationInstance.RSMPivot.Position, false);
+			//xWorld		.Scale			(applicationInstance.RSMPivot.Scale, true);
+			//xRotation	.SetOrientation	(applicationInstance.RSMPivot.Orientation.Normalize());
+			//xWorld																	= xWorld * xRotation;
+			//xWorld		.SetTranslation	(applicationInstance.RSMPivot.Position, false);
+			xWorld																	= applicationInstance.RSMTransformGlobal[iNode];
 			::llc::clear
 				( renderCache.Triangle3dWorld
 				, renderCache.Triangle3dToDraw		

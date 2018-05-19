@@ -74,11 +74,9 @@ struct SThreadArgs {
 struct SApplication {
 						::llc::SFramework												Framework							;
 
-
 						::llc::STexture<::llc::SColorBGRA>								TextureFont							= {};
 						::llc::STextureMonochrome<uint32_t>								TextureFontMonochrome				= {};
 						::llc::SGUI														GUI									= {};
-
 
 						::llc::SScene													Scene;
 						::llc::SCoord3<float>											LightDirection						= {10, 5, 0};
@@ -86,11 +84,12 @@ struct SApplication {
 						::llc::SRSMFileContents											RSMData								= {};
 
 						::llc::SModelPivot	<float>										RSMPivot							= {};
-
+						::llc::array_obj<::llc::SModelHierarchyNodeRSM>					RSMHierarchy						= {};
 						::llc::array_obj<::llc::SModelNodeRSM>							RSMNodes							= {};
-						::llc::array_obj<::llc::STexture<::llc::SColorBGRA>>			TexturesRSM							= {};
+						::llc::array_obj<::llc::STexture<::llc::SColorBGRA>>			RSMTextures							= {};
+						::llc::array_pod<::llc::SMatrix4<float>>						RSMTransformGlobal					= {};
+						::llc::array_pod<::llc::SMatrix4<float>>						RSMTransformLocal					= {};
 
-						// cabildo 2954
 						::SRenderCache													RenderCache							= {};
 
 																						SApplication						(::llc::SRuntimeValues& runtimeValues)			noexcept	: Framework(runtimeValues) {}
