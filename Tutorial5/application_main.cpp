@@ -116,11 +116,11 @@ static				::llc::error_t										bmpOrBmgLoad								(::llc::view_string bmpFil
 			||	0 != srcColor.b
 			;
 	}
-	llc_necall(::llc::gndFileLoad(applicationInstance.GNDData, "..\\data_2006\\data\\prt_fild00.gnd"), "Error");
+	llc_necall(::llc::gndFileLoad(applicationInstance.GNDData, "..\\data_2005\\data\\prt_fild00.gnd"), "Error");
 	::llc::SModelNodeGND														modelNode;
 	applicationInstance.TexturesGND.resize(applicationInstance.GNDData.TextureNames.size());
 	for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++ iTex) {
-		static constexpr	const char												respath			[]							= "..\\data_2017\\data\\texture";
+		static constexpr	const char												respath			[]							= "..\\data_2005\\data\\texture";
 		char																		filepathinal	[512]						= {};
 		sprintf_s(filepathinal, "%s\\%s", respath, applicationInstance.GNDData.TextureNames[iTex].c_str());
 		error_if(errored(::llc::bmpFileLoad((::llc::view_const_string)filepathinal, applicationInstance.TexturesGND[iTex])), "Not found? %s.", filepathinal);

@@ -114,7 +114,7 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			;
 	}
 	static constexpr const char													rsmFilename	[]								= "니플헤임\\니플헤임-풍차.rsm";
-	static constexpr const char													ragnaPath	[]								= "..\\data_2017\\data\\";
+	static constexpr const char													ragnaPath	[]								= "..\\data_2005\\data\\";
 	char																		temp		[512]							= {};
 	::llc::SRSMFileContents														& rsmData									= applicationInstance.RSMData;
 	sprintf_s(temp, "%s%s%s", ragnaPath, "model\\", rsmFilename);	

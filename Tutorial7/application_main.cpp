@@ -122,7 +122,7 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			;
 	}
 
-	static constexpr const char													ragnaPath	[]								= "..\\data_2017\\data\\";
+	static constexpr const char													ragnaPath	[]								= "..\\data_2005\\data\\";
 	::llc::array_pod<char_t>													base64Encoded;
 	::llc::array_pod<ubyte_t>													base64Decoded;
 	::llc::base64Encode({(const ubyte_t*)ragnaPath, ::llc::size(ragnaPath)}, base64Encoded);
