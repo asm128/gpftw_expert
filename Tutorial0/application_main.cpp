@@ -52,7 +52,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	g_ApplicationInstance													= &applicationInstance;
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
-	static constexpr	const char												bmpFileName2	[]							= "Codepage-437-24.bmp";
+	static constexpr	const char												bmpFileName2	[]							= "..\\gpk_data\\images\\Codepage-437-24.bmp";
 	error_if(errored(::llc::bmpFileLoad((::llc::view_const_string)bmpFileName2, applicationInstance.TextureFont				)), "Failed to load bitmap from file: %s.", bmpFileName2);
 	const ::llc::SCoord2<uint32_t>												& textureFontMetrics						= applicationInstance.TextureFont.View.metrics();
 	applicationInstance.TextureFontMonochrome.resize(textureFontMetrics);

@@ -67,8 +67,8 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	g_ApplicationInstance													= &applicationInstance;
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
-	char																		bmpFileName1	[]							= "test.bmp";//"pow_core_0.bmp";
-	char																		bmpFileName2	[]							= "Codepage-437-24.bmp";
+	char																		bmpFileName1	[]							= "..\\gpk_data\\images\\test.bmp";//"pow_core_0.bmp";
+	char																		bmpFileName2	[]							= "..\\gpk_data\\images\\Codepage-437-24.bmp";
 	ree_if(errored(::bmpOrBmgLoad(bmpFileName1, applicationInstance.TextureBox)), "");
 	ree_if(errored(::bmpOrBmgLoad(bmpFileName2, applicationInstance.TextureFont)), "");
 	const ::llc::SCoord2<uint32_t>												& textureFontMetrics						= applicationInstance.TextureFont.View.metrics();

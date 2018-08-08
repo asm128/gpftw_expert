@@ -103,7 +103,7 @@ static				::llc::error_t										bmpOrBmgLoad								(::llc::view_string bmpFil
 	error_if(errored(setupThreads(applicationInstance)), "Unknown.");
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
-	char																		bmpFileName2	[]							= "Codepage-437-24.bmp";
+	char																		bmpFileName2	[]							= "..\\gpk_data\\images\\Codepage-437-24.bmp";
 	error_if(errored(::bmpOrBmgLoad(bmpFileName2, applicationInstance.TextureFont)), "");
 	const ::llc::SCoord2<uint32_t>												& textureFontMetrics						= applicationInstance.TextureFont.View.metrics();
 	applicationInstance.TextureFontMonochrome.resize(textureFontMetrics);

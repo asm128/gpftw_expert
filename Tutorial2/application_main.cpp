@@ -57,14 +57,14 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	g_ApplicationInstance													= &applicationInstance;
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
-	char																		bmpFileName1	[]							= "test.bmp";//"pow_core_0.bmp";
+	char																		bmpFileName1	[]							= "..\\gpk_data\\images\\test.bmp";//"pow_core_0.bmp";
 	if(errored(::llc::bmpFileLoad((::llc::view_const_string)bmpFileName1, applicationInstance.TextureBox))) {
 		error_printf("Failed to load bitmap from file: %s.", bmpFileName1);
 		bmpFileName1[::llc::size(bmpFileName1) - 2] = 'g';
 		if(errored(::llc::bmgFileLoad((::llc::view_const_string)bmpFileName1, applicationInstance.TextureBox))) 
 			error_printf("Failed to load bitmap from file: %s.", bmpFileName1);
 	}
-	char																		bmpFileName2	[]							= "Codepage-437-24.bmp";
+	char																		bmpFileName2	[]							= "..\\gpk_data\\images\\Codepage-437-24.bmp";
 	if(errored(::llc::bmpFileLoad((::llc::view_const_string)bmpFileName2, applicationInstance.TextureFont))) {
 		error_printf("Failed to load bitmap from file: %s.", bmpFileName2);
 		bmpFileName2[::llc::size(bmpFileName2) - 2] = 'g';
