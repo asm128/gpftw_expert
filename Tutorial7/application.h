@@ -49,51 +49,22 @@ struct SRenderCache {
 						uint32_t												PixelsSkipped						= 0;
 };
 
-struct SApplicationThreadsState { 
-						bool													Running								: 1;
-						bool													Closed								: 1;
-						bool													RequestedClose						: 1;
-};
-
-struct SApplicationThreadsCall {
-						void													* Call								= 0;
-						void													* Arguments							= 0;
-};
-
-struct SApplicationThreads {
-						uintptr_t												Handles	[4]							;
-						SApplicationThreadsState								States	[4]							;
-						::llc::array_pod<SApplicationThreadsCall>				Arguments							;
-};
-
-struct SThreadArgs {
-						::SApplicationThreads									* ApplicationThreads				;
-						int32_t													ThreadId							;
-};
 
 struct SApplication {
 						::llc::SFramework										Framework							;
-
-						::llc::array_obj<::llc::STexture<::llc::SColorBGRA>>	TexturesGND							= {};
+						::llc::SGUI												GUI									= {};
 						::llc::STexture<::llc::SColorBGRA>						TextureFont							= {};
 						::llc::STextureMonochrome<uint32_t>						TextureFontMonochrome				= {};
-						::llc::SGUI												GUI									= {};
 
+						::llc::array_obj<::llc::STexture<::llc::SColorBGRA>>	TexturesGND							= {};
 						::llc::SModelPivot	<float>								GridPivot							= {};
-
 						::llc::SScene											Scene;
 						::llc::SCoord3<float>									LightDirection						= {10, 5, 0};
 						::llc::SGNDFileContents									GNDData								= {};
 						::llc::SRSWFileContents									RSWData								= {};
 						::llc::array_obj<::llc::SRSMFileContents>				RSMData								= {};
-
 						::llc::SModelGND										GNDModel							= {};
-						//::llc::array_obj<::llc::SModelRSM>					RSMModel							= {};
-
-						// cabildo 2954
 						::SRenderCache											RenderCache							= {};
-						::SApplicationThreads									Threads								= {};
-						::SThreadArgs											ThreadArgs[4]						= {};
 
 																				SApplication						(::llc::SRuntimeValues& runtimeValues)			noexcept	: Framework(runtimeValues) {}
 };

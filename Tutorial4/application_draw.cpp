@@ -13,7 +13,7 @@
 	) {	// --- This function will draw some coloured symbols in each cell of the ASCII screen.
 	const ::llc::SColorBGRA														ambientColor								= {0xF, 0xF, 0xF, 0xFF};	//(((::llc::DARKRED * pixelWeights.A) + (::llc::DARKGREEN * pixelWeights.B) + (::llc::DARKBLUE * pixelWeights.C))) * .1;
 	const ::llc::SColorFloat													interpolatedColor							= {1, 1, 1, 1}; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
-	::llc::STriangle3D<float>													weightedNormals								= renderCache.TransformedNormalsVertex[iTriangle]; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
+	::llc::STriangle3D<float>													weightedNormals								= renderCache.TransformedNormalsVertex.begin()[iTriangle]; //((::llc::RED * pixelWeights.A) + (::llc::GREEN * pixelWeights.B) + (::llc::BLUE * pixelWeights.C));
 	weightedNormals.A														*= pixelWeights.A;
 	weightedNormals.B														*= pixelWeights.B;
 	weightedNormals.C														*= pixelWeights.C;
@@ -109,7 +109,6 @@
 			float																		oldzA										= transformedTriangle3D.A.z;
 			float																		oldzB										= transformedTriangle3D.B.z;
 			float																		oldzC										= transformedTriangle3D.C.z;
-
 			::llc::transform(transformedTriangle3D, projection);
 			transformedTriangle3D.A.z												= oldzA;
 			transformedTriangle3D.B.z												= oldzB;

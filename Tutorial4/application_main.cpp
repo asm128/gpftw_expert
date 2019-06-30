@@ -50,38 +50,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		error_if(errored(::llc::displayUpdate(applicationInstance.Framework.MainDisplay)), "Not sure why this would fail");
 	}
 	::UnregisterClass(displayDetail.WindowClassName, displayDetail.WindowClass.hInstance);
-	bool																		waiting										= true;
-	for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) 
-		applicationInstance.Threads.States[iThread].RequestedClose				= true;
-	while(waiting) {
-		waiting																	= false;
-		for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) {
-			if(false == applicationInstance.Threads.States[iThread].Closed) {
-				waiting																	= true;
-				break;
-			}
-		}
-	}
-
 	g_ApplicationInstance													= 0;
-	return 0;
-}
-
-					void												myThread									(void* _applicationThreads)														{
-	::SThreadArgs																& threadArgs								= *(::SThreadArgs*)_applicationThreads;
-	::SApplicationThreads														& applicationThreads						= *threadArgs.ApplicationThreads;
-	int32_t																		threadId									= threadArgs.ThreadId;
-	while(false == applicationThreads.States[threadId].RequestedClose) {
-		Sleep(10);
-	}
-	applicationThreads.States[threadId].Closed								= true;
-}
-
-					::llc::error_t										setupThreads								(::SApplication& applicationInstance)													{
-	for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) {
-		applicationInstance.Threads.States	[iThread]							= {true,};									
-		applicationInstance.Threads.Handles	[iThread]							= _beginthread(myThread, 0, &(applicationInstance.ThreadArgs[iThread] = {&applicationInstance.Threads, (int32_t)iThread}));
-	}
 	return 0;
 }
 
@@ -134,7 +103,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 					::llc::error_t										mainWindowCreate							(::llc::SDisplay& mainWindow, HINSTANCE hInstance);
 					::llc::error_t										setup										(::SApplication& applicationInstance)													{
 	g_ApplicationInstance													= &applicationInstance;
-	error_if(errored(setupThreads(applicationInstance)), "Unknown.");
+	//error_if(errored(setupThreads(applicationInstance)), "Unknown.");
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
 	char																		bmpFileName1	[]							= "..\\gpk_data\\images\\test.bmp";//"pow_core_0.bmp";
@@ -152,18 +121,6 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 			||	0 != srcColor.b
 			;
 	}
-
-
-	//llc_necall(::gndFileLoad(applicationInstance.GNDData, ".\\data\\prt_fild00.gnd"), "Error");
-	//SModelNodeGND																modelNode;
-	//applicationInstance.TexturesGND.resize(applicationInstance.GNDData.TextureNames.size());
-	//for(uint32_t iTex = 0; iTex < applicationInstance.GNDData.TextureNames.size(); ++ iTex) {
-	//	static constexpr	const char												respath			[]							= "..\\data\\texture";
-	//	char																		filepathinal	[512]						= {};
-	//	sprintf_s(filepathinal, "%s\\%s", respath, applicationInstance.GNDData.TextureNames[iTex].c_str());
-	//	error_if(errored(::llc::bmpFileLoad((::llc::view_const_string)filepathinal, applicationInstance.TexturesGND[iTex])), "Not found? %s.", filepathinal);
-	//}
-
 	ree_if(errored(::updateSizeDependentResources(applicationInstance)), "Cannot update offscreen and textures and this could cause an invalid memory access later on.");
 
 	// Load and pretransform our cube geometry.
@@ -284,7 +241,6 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 	cameraVectors.Right														= cameraVectors.Up		.Cross(cameraVectors.Front).Normalize();
 	cameraVectors.Up														= cameraVectors.Front	.Cross(cameraVectors.Right).Normalize();
 	viewMatrix.View3D(camera.Position, cameraVectors.Right, cameraVectors.Up, cameraVectors.Front);
-	//viewMatrix.LookAt(camera.Position, {0, 0, 0}, {0, 1, 0});
 
 	//------------------------------------------------ Lights
 	::llc::SCoord3<float>														& lightDir									= applicationInstance.LightDirection;
@@ -293,11 +249,6 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 
 	//------------------------------------------------ 
 	applicationInstance.GridPivot.Scale										= {2.f, 4.f, 2.f};
-	//applicationInstance.GridPivot.Scale										= {1, -1, 1};
-	//applicationInstance.GridPivot.Orientation.y								= (float)(sinf((float)(frameInfo.Seconds.Total / 2)) * ::llc::math_2pi);
-	//applicationInstance.GridPivot.Orientation.w								= 1;
-	//applicationInstance.GridPivot.Orientation.Normalize();
-	//applicationInstance.GridPivot.Position									= {applicationInstance.GNDData.Metrics.Size.x / 2.0f * -1, 0, applicationInstance.GNDData.Metrics.Size.y / 2.0f * -1};
 	applicationInstance.GridPivot.Position									= {};
 	return 0;
 }

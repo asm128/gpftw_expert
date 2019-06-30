@@ -53,38 +53,7 @@ static				::llc::error_t										updateSizeDependentResources				(::SApplicatio
 		error_if(errored(::llc::displayUpdate(applicationInstance.Framework.MainDisplay)), "Not sure why this would fail");
 	}
 	::UnregisterClass(displayDetail.WindowClassName, displayDetail.WindowClass.hInstance);
-	bool																		waiting										= true;
-	for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) 
-		applicationInstance.Threads.States[iThread].RequestedClose				= true;
-	while(waiting) {
-		waiting																	= false;
-		for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) {
-			if(false == applicationInstance.Threads.States[iThread].Closed) {
-				waiting																	= true;
-				break;
-			}
-		}
-	}
-
 	g_ApplicationInstance													= 0;
-	return 0;
-}
-
-static				void												myThread									(void* _applicationThreads)														{
-	::SThreadArgs																& threadArgs								= *(::SThreadArgs*)_applicationThreads;
-	::SApplicationThreads														& applicationThreads						= *threadArgs.ApplicationThreads;
-	int32_t																		threadId									= threadArgs.ThreadId;
-	while(false == applicationThreads.States[threadId].RequestedClose) {
-		Sleep(10);
-	}
-	applicationThreads.States[threadId].Closed								= true;
-}
-
-static				::llc::error_t										setupThreads								(::SApplication& applicationInstance)													{
-	for(uint32_t iThread = 0, threadCount = ::llc::size(applicationInstance.Threads.Handles); iThread < threadCount; ++iThread) {
-		applicationInstance.Threads.States	[iThread]							= {true,};									
-		applicationInstance.Threads.Handles	[iThread]							= _beginthread(myThread, 0, &(applicationInstance.ThreadArgs[iThread] = {&applicationInstance.Threads, (int32_t)iThread}));
-	}
 	return 0;
 }
 
@@ -105,7 +74,6 @@ static				::llc::error_t										bmpOrBmgLoad								(::llc::view_string bmpFil
 static				::llc::error_t										setup										(::SApplication& applicationInstance)													{
 	g_ApplicationInstance													= &applicationInstance;
 	
-	error_if(errored(setupThreads(applicationInstance)), "Unknown.");
 	::llc::SDisplay																& mainWindow								= applicationInstance.Framework.MainDisplay;
 	error_if(errored(::mainWindowCreate(mainWindow, applicationInstance.Framework.RuntimeValues.PlatformDetail.EntryPointArgs.hInstance)), "Failed to create main window why?????!?!?!?!?");
 	char																		bmpFileName2	[]							= "Codepage-437-24.bmp";
@@ -122,17 +90,11 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			;
 	}
 
-	static constexpr const char													ragnaPath	[]								= "..\\data_2005\\data\\";
-	::llc::array_pod<char_t>													base64Encoded;
-	::llc::array_pod<ubyte_t>													base64Decoded;
-	::llc::base64Encode({(const ubyte_t*)ragnaPath, ::llc::size(ragnaPath)}, base64Encoded);
-	::llc::base64Decode(base64Encoded, base64Decoded);
-	info_printf("base64Encoded: %s.", &base64Encoded[0]);
-	info_printf("base64Decoded: %s.", &base64Decoded[0]);
+	static constexpr const char													ragnaPath	[]								= "..\\data_2006\\data\\";
 
 	char																		temp		[512]							= {};
 	::llc::SRSWFileContents														& rswData									= applicationInstance.RSWData;
-	sprintf_s(temp, "%s%s%s", ragnaPath, "", "comodo.rsw");						llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
+	sprintf_s(temp, "%s%s%s", ragnaPath, "", "geffen_in.rsw");						llc_necall(::llc::rswFileLoad(rswData						, ::llc::view_const_string(temp)), "Error");
 	sprintf_s(temp, "%s%s%s", ragnaPath, "", &rswData.GNDFilename[0]);			llc_necall(::llc::gndFileLoad(applicationInstance.GNDData	, ::llc::view_const_string(temp)), "Error");
 	applicationInstance.RSMData.resize(rswData.RSWModels.size());
 	for(uint32_t iRSM = 0; iRSM < (uint32_t)rswData.RSWModels.size(); ++iRSM){
@@ -308,3 +270,37 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 	return 0;																																																
 }
 		
+
+// Alquiler:              8200
+// Expensas:              1300
+// Depto total:           9500
+
+// Movistar:              1300
+// Personal:              1500
+// Fibertel:               800
+// Telecom:                500
+// Fibercorp:             6000
+// Comms total:          10080
+
+// Edesur:                1000~1500
+// MetroGas:               800
+// ABL:                    ???
+// Servicios total:       1800~2300 + ??? = 3000 ? 
+
+// VISA:                 20000
+// Amex:                  5000
+// Tarjetas total:       25000
+// 
+// Depto total:           9500
+// Comms total:          10080
+// Servicios total:       1800~2300 + ??? = 3000 ? 
+// Tarjetas total:       25000
+
+// Subtotal:             46400
+
+// Sueldo Belatrix:      53000
+// Juego x1:             12000
+// Total comienzo Junio: 65000
+//                      -46400
+//                       
+//                       

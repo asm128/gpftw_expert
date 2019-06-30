@@ -166,14 +166,7 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 			;
 	}
 
-	static constexpr const char													ragnaPath	[]								= "..\\data_2005\\data\\";
-	::llc::array_pod<char_t>													base64Encoded;
-	::llc::array_pod<ubyte_t>													base64Decoded;
-	::llc::base64Encode({(const ubyte_t*)ragnaPath, ::llc::size(ragnaPath)}, base64Encoded);
-	::llc::base64Decode(base64Encoded, base64Decoded);
-	info_printf("base64Encoded: %s.", &base64Encoded[0]);
-	info_printf("base64Decoded: %s.", &base64Decoded[0]);
-
+	static constexpr const char													ragnaPath	[]								= "..\\data_2006\\data\\";
 	char																		temp		[512]							= {};
 	::llc::SRSWFileContents														& rswData									= applicationInstance.RSWData;
 	::llc::SGNDFileContents														& gndData									= applicationInstance.GNDData;
@@ -209,6 +202,7 @@ static				::llc::error_t										setup										(::SApplication& applicationIns
 
 	applicationInstance.GNDModel.Nodes		.resize(gndData.TextureNames.size() * 6);
 	applicationInstance.GNDModel.TileMapping.resize(gndData.Metrics.Size);
+	// -- Generate minimap
 	::llc::grid_view<::llc::STileGeometryGND>									tileGeometryView								= {gndData.lstTileGeometryData.begin(), gndData.Metrics.Size};
 	::llc::SMinMax<float>														heightMinMax									= {};
 	for(uint32_t iTile = 0; iTile < gndData.lstTileGeometryData.size(); ++iTile)
